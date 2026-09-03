@@ -47,8 +47,12 @@ export async function updateClass(
   return result[0]
 }
 
+/** Deletes the class and every hero in it (fails if any of those heroes are in use). */
 export async function deleteClass(id: number): Promise<void> {
-  await pg(CLASSES_TABLE).where('id', id).del()
+  await pg.transaction(async (trx) => {
+    await trx(HEROES_TABLE).where('classId', id).del()
+    await trx(CLASSES_TABLE).where('id', id).del()
+  })
 }
 
 export async function classHeroCount(id: number): Promise<number> {

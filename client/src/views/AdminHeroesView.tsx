@@ -168,15 +168,23 @@ export function AdminHeroesView() {
                   <TableCell align="right">
                     <IconButton
                       size="small"
-                      disabled={busy === `class-${c.id}` || count > 0}
-                      title={count > 0 ? 'Move or delete its heroes first' : 'Delete class'}
-                      onClick={() =>
+                      disabled={busy === `class-${c.id}`}
+                      title="Delete class (and its heroes)"
+                      onClick={() => {
+                        if (
+                          count > 0 &&
+                          !window.confirm(
+                            `Delete "${c.name}" and its ${count} hero(es)? Heroes already used in a tournament cannot be deleted.`
+                          )
+                        ) {
+                          return
+                        }
                         run(
                           `class-${c.id}`,
                           () => api.Class.remove({ classId: c.id }),
                           'Class deleted'
                         )
-                      }
+                      }}
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>

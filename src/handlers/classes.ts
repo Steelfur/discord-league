@@ -54,11 +54,18 @@ export async function deleteHandler(
     res.sendStatus(400)
     return
   }
-  const heroCount = await db.classHeroCount(classId)
-  if (heroCount > 0) {
-    res.status(409).send(`This class still has ${heroCount} hero(es). Move or delete them first.`)
-    return
+  try {
+    await db.deleteClass(classId)
+    res.sendStatus(204)
+  } catch (error) {
+    if (db.isDbError(error) && error.code === '23503') {
+      res
+        .status(409)
+        .send(
+          'Cannot delete: a hero in this class has been used in a tournament. Reassign it first.'
+        )
+      return
+    }
+    throw error
   }
-  await db.deleteClass(classId)
-  res.sendStatus(204)
 }
