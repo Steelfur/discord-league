@@ -29,27 +29,68 @@ export async function deleteTournament(id: number): Promise<number> {
   return pg(TABLE).where('id', id).del()
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function deepDeleteTournament(trx: any, id: number): Promise<void> {
+  const participantIds = (await trx('participants').where({ tournamentId: id }).select('id')).map(
+    (r: { id: number }) => r.id
+  )
+  const podIds = (await trx('pods').where({ tournamentId: id }).select('id')).map(
+    (r: { id: number }) => r.id
+  )
+  const matchIds = podIds.length
+    ? (await trx('pods_matches').whereIn('podId', podIds).select('matchId')).map(
+        (r: { matchId: number }) => r.matchId
+      )
+    : []
+
+  await trx('bracket_matches').where({ tournamentId: id }).del()
+  if (participantIds.length) {
+    await trx('decklists').whereIn('participantId', participantIds).del()
+    await trx('feedbacks').whereIn('participantId', participantIds).del()
+  }
+  if (podIds.length) await trx('pods_matches').whereIn('podId', podIds).del()
+  if (matchIds.length) await trx('matches').whereIn('id', matchIds).del()
+  if (podIds.length) await trx('pods').whereIn('id', podIds).del()
+  if (participantIds.length) await trx('participants').whereIn('id', participantIds).del()
+  await trx(TABLE).where({ id }).del()
+}
+
 /** Delete a tournament and everything hanging off it, in dependency order. */
 export async function deleteTournamentDeep(id: number): Promise<void> {
-  await pg.transaction(async (trx) => {
-    const participantIds = (await trx('participants').where({ tournamentId: id }).select('id')).map(
-      (r) => r.id
-    )
-    const podIds = (await trx('pods').where({ tournamentId: id }).select('id')).map((r) => r.id)
-    const matchIds = podIds.length
-      ? (await trx('pods_matches').whereIn('podId', podIds).select('matchId')).map((r) => r.matchId)
-      : []
+  await pg.transaction((trx) => deepDeleteTournament(trx, id))
+}
 
-    await trx('bracket_matches').where({ tournamentId: id }).del()
-    if (participantIds.length) {
-      await trx('decklists').whereIn('participantId', participantIds).del()
-      await trx('feedbacks').whereIn('participantId', participantIds).del()
+/**
+ * Delete every tournament whose participants are ALL fake "test-" users, plus
+ * any now-orphaned test users.
+ */
+export async function purgeTestData(): Promise<{ tournaments: number; users: number }> {
+  return pg.transaction(async (trx) => {
+    const rows: { id: number }[] = await trx('tournaments as t')
+      .select('t.id')
+      .whereExists(function () {
+        this.select(1)
+          .from('participants as p')
+          .whereRaw('p."tournamentId" = t.id')
+          .andWhere('p.userId', 'like', 'test-%')
+      })
+      .whereNotExists(function () {
+        this.select(1)
+          .from('participants as q')
+          .whereRaw('q."tournamentId" = t.id')
+          .andWhere('q.userId', 'not like', 'test-%')
+      })
+
+    for (const { id } of rows) {
+      await deepDeleteTournament(trx, id)
     }
-    if (podIds.length) await trx('pods_matches').whereIn('podId', podIds).del()
-    if (matchIds.length) await trx('matches').whereIn('id', matchIds).del()
-    if (podIds.length) await trx('pods').whereIn('id', podIds).del()
-    if (participantIds.length) await trx('participants').whereIn('id', participantIds).del()
-    await trx(TABLE).where({ id }).del()
+
+    const users = await trx('users')
+      .where('discordId', 'like', 'test-%')
+      .whereNotIn('discordId', trx('participants').select('userId'))
+      .del()
+
+    return { tournaments: rows.length, users }
   })
 }
 

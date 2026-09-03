@@ -86,3 +86,9 @@ export async function handler(req: ValidatedRequest<typeof schema>, res: Respons
 
   res.status(201).send({ id: tournament.id, name: tournament.name })
 }
+
+// POST /tournament/purge-test-data
+export async function purgeHandler(_req: unknown, res: Response): Promise<void> {
+  const result = await db.purgeTestData()
+  res.status(200).send(result)
+}

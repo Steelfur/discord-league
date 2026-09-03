@@ -101,6 +101,7 @@ export default (): AsyncRouterInstance => {
     validate(seedTestTournament.schema),
     seedTestTournament.handler
   )
+  api.post('/tournament/purge-test-data', authenticate, onlyAdmin, seedTestTournament.purgeHandler)
   api.get('/tournament/:tournamentId', getTournament.handler)
   api.get('/tournament/:tournamentId/statistics', getTournamentStatistics.handler)
   api.put(

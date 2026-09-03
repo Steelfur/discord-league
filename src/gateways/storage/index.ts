@@ -77,6 +77,7 @@ export {
   deleteTournament,
   deleteTournamentDeep,
   deleteTournamentPodsAndMatches,
+  purgeTestData,
   fetchTournament,
   fetchTournaments,
   fetchTournamentsForUser,

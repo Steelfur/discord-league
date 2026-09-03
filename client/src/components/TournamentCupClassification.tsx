@@ -145,25 +145,22 @@ export const TournamentCupClassification = memo(
       return null
     }
 
-    const [inCutParticipants, eliminatedParticipants] = splitByCut(props.participants)
-    const [inCutDecklists, eliminatedDecklists] = splitByCut(decklistFetching.data)
+    const [inCutParticipants] = splitByCut(props.participants)
+    const [inCutDecklists] = splitByCut(decklistFetching.data)
 
     return (
       <Container>
-        <DecklistsTable
-          title="In the cut"
-          decklists={inCutDecklists}
-          participants={inCutParticipants}
-          currentUser={currentUser}
-          dispatch={dispatch}
-        />
-        <DecklistsTable
-          title="Eliminated"
-          decklists={eliminatedDecklists}
-          participants={eliminatedParticipants}
-          currentUser={currentUser}
-          dispatch={dispatch}
-        />
+        {inCutParticipants.length === 0 ? (
+          <Typography>The cut is set once the group stage is finished.</Typography>
+        ) : (
+          <DecklistsTable
+            title="In the cut"
+            decklists={inCutDecklists}
+            participants={inCutParticipants}
+            currentUser={currentUser}
+            dispatch={dispatch}
+          />
+        )}
         {state.isModalOpen && (
           <SubmitDecklistModal
             initialLink={

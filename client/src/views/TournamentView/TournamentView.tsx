@@ -124,6 +124,25 @@ export function TournamentView() {
       })
   }
 
+  async function purgeTestData() {
+    if (
+      !(await confirm({
+        title: 'Purge test data',
+        body: 'Delete every all-fake test tournament and its "test-" players. Real tournaments are untouched.',
+        confirmLabel: 'Purge',
+        destructive: true,
+      }))
+    )
+      return
+    api.Tournament.purgeTestData({})
+      .then((r) => {
+        const { tournaments: t, users: u } = r.data() as { tournaments: number; users: number }
+        dispatch({ type: 'SUCCESS', payload: `Removed ${t} test tournament(s) and ${u} test user(s).` })
+        refetchTournaments()
+      })
+      .catch(() => dispatch({ type: 'FAILURE', payload: 'Could not purge test data' }))
+  }
+
   if (typeof tournaments.error === 'string') {
     return <RequestError requestError={tournaments.error} />
   }
@@ -154,7 +173,10 @@ export function TournamentView() {
         message={state.snackBarMessage}
       />
       {isAdmin && (
-        <div className={classes.fab} style={{ display: 'flex', gap: 8 }}>
+        <div className={classes.fab} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Fab color="default" size="medium" variant="extended" onClick={purgeTestData}>
+            🧹 Purge Test Data
+          </Fab>
           <Fab color="default" variant="extended" onClick={seedTestTournament}>
             🧪 Test Tournament
           </Fab>

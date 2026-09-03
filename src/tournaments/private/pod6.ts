@@ -33,39 +33,18 @@ export class Pod6Tournament extends LeagueBase {
     return records
   }
 
-  private bracketForSmallPod(position: number): ExtendedParticipant['bracket'] | null {
-    return position < 3 ? 'goldCup' : position < 5 ? 'silverCup' : null
-  }
-
-  private bracketForLargePod(position: number): ExtendedParticipant['bracket'] | null {
-    return position < 3 ? 'goldCup' : position < 6 ? 'silverCup' : null
-  }
-
   protected rankParticipants(
     extendedParticipants: ExtendedParticipant[],
     matches: MatchData[]
   ): RankedParticipant[] {
     const rankedParticipants = rankPodParticipants(extendedParticipants, matches)
-    const isSmallPod = extendedParticipants.length <= 6
+    // `bracket` is the "made the cut" flag set by closeGroupStage — keep it as
+    // stored, don't re-derive it from pod position.
     return rankedParticipants.flatMap(({ id }, idx) => {
       const participant = extendedParticipants.find(
         (extendedParticipant) => id === extendedParticipant.id
       )
-      if (!participant) {
-        return []
-      }
-
-      const position = idx + 1
-      const bracket =
-        typeof participant.bracket === 'string'
-          ? participant.bracket
-          : participant.dropped
-          ? null
-          : isSmallPod
-          ? this.bracketForSmallPod(position)
-          : this.bracketForLargePod(position)
-
-      return { ...participant, position, bracket }
+      return participant ? [{ ...participant, position: idx + 1 }] : []
     })
   }
 }
