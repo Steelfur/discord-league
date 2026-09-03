@@ -4,11 +4,14 @@
  */
 
 exports.up = async function (knex) {
-  await knex.schema.dropTableIfExists('roles')
-  await knex.schema.dropTableIfExists('role_types')
-  await knex.schema.dropTableIfExists('elements')
-  await knex.schema.dropTableIfExists('victory_conditions')
-  await knex.schema.dropTableIfExists('clans')
+  // CASCADE mops up any leftover FK constraints from the old snake_case era.
+  await knex.raw(`
+    DROP TABLE IF EXISTS "roles" CASCADE;
+    DROP TABLE IF EXISTS "role_types" CASCADE;
+    DROP TABLE IF EXISTS "elements" CASCADE;
+    DROP TABLE IF EXISTS "victory_conditions" CASCADE;
+    DROP TABLE IF EXISTS "clans" CASCADE;
+  `)
 }
 
 exports.down = async function (knex) {

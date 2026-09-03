@@ -8,6 +8,11 @@
  * Result of a match is derived: winnerId set => that player won; isDraw => draw;
  * noShow => one or both players did not show (winnerId set alongside noShow means
  * the other player was a no-show).
+ *
+ * NOTE: the deck*ClanId foreign keys on `matches` were created before an old
+ * migration camelCased the columns, so their constraint names still use the
+ * original snake_case ("matches_deck_a_clan_id_foreign"). Drop them by name
+ * with IF EXISTS rather than knex's dropForeign(), which guesses the wrong name.
  */
 
 exports.up = async function (knex) {
@@ -19,10 +24,13 @@ exports.up = async function (knex) {
     table.dropColumn('deckBSplashId')
   })
 
-  await knex.schema.alterTable('matches', function (table) {
-    table.dropForeign('deckAClanId')
-    table.dropForeign('deckBClanId')
-  })
+  await knex.raw(`
+    ALTER TABLE "matches" DROP CONSTRAINT IF EXISTS "matches_deck_a_clan_id_foreign";
+    ALTER TABLE "matches" DROP CONSTRAINT IF EXISTS "matches_deck_b_clan_id_foreign";
+    ALTER TABLE "matches" DROP CONSTRAINT IF EXISTS "matches_deckaclanid_foreign";
+    ALTER TABLE "matches" DROP CONSTRAINT IF EXISTS "matches_deckbclanid_foreign";
+  `)
+
   await knex.schema.alterTable('matches', function (table) {
     table.renameColumn('deckAClanId', 'playerAHeroId')
     table.renameColumn('deckBClanId', 'playerBHeroId')
@@ -36,11 +44,13 @@ exports.up = async function (knex) {
 }
 
 exports.down = async function (knex) {
+  await knex.raw(`
+    ALTER TABLE "matches" DROP CONSTRAINT IF EXISTS "matches_playeraheroid_foreign";
+    ALTER TABLE "matches" DROP CONSTRAINT IF EXISTS "matches_playerbheroid_foreign";
+  `)
   await knex.schema.alterTable('matches', function (table) {
     table.dropColumn('isDraw')
     table.dropColumn('noShow')
-    table.dropForeign('playerAHeroId')
-    table.dropForeign('playerBHeroId')
   })
   await knex.schema.alterTable('matches', function (table) {
     table.renameColumn('playerAHeroId', 'deckAClanId')
