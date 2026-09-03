@@ -124,9 +124,18 @@ export function TournamentParticipationPanel({
   const [state, dispatch] = useReducer(reducer, initialState)
   const user = useContext(UserContext)
   const createParticipant = useCreateParticipant(tournament.id, dispatch, onUpdate)
+  // Guard against any stale duplicate rows: one entry per Discord user.
+  const uniqueParticipants = useMemo(() => {
+    const seen = new Set<string>()
+    return participants.filter((p) => (seen.has(p.userId) ? false : seen.add(p.userId)))
+  }, [participants])
   const currentUserParticipation = useMemo(
-    () => participants.find((participant) => participant.userId === user?.discordId),
-    [participants, user]
+    () => uniqueParticipants.find((participant) => participant.userId === user?.discordId),
+    [uniqueParticipants, user]
+  )
+  const otherParticipants = useMemo(
+    () => uniqueParticipants.filter((p) => p.userId !== currentUserParticipation?.userId),
+    [uniqueParticipants, currentUserParticipation]
   )
   return (
     <div className={classes.root}>
@@ -145,14 +154,16 @@ export function TournamentParticipationPanel({
           />
         )}
 
-        <ParticipationTable
-          data={participants}
-          title="Participants"
-          tournamentId={tournament.id}
-          onUpdate={onUpdate}
-          users={users}
-          isEditable={user && isAdmin(user)}
-        />
+        {otherParticipants.length > 0 && (
+          <ParticipationTable
+            data={otherParticipants}
+            title={currentUserParticipation ? 'Other Players' : 'Players'}
+            tournamentId={tournament.id}
+            onUpdate={onUpdate}
+            users={users}
+            isEditable={user && isAdmin(user)}
+          />
+        )}
       </Box>
 
       {tournament.statusId === 'upcoming' && user && (!currentUserParticipation || isAdmin(user)) && (
@@ -169,7 +180,7 @@ export function TournamentParticipationPanel({
       )}
 
       <div className={classes.pieChartContainer}>
-        <PlayersPieChart participants={participants} />
+        <PlayersPieChart participants={uniqueParticipants} />
       </div>
 
       <EditParticipationModal
