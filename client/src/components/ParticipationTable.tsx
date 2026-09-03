@@ -128,6 +128,8 @@ export function ParticipationTable(props: {
   tournamentId: number
   data: RankedParticipant[]
   isEditable?: boolean
+  // when set, the row belonging to this user can be edited (not deleted) by them
+  selfEditableUserId?: string
   onUpdate: () => void
   title: string
   users: UserRowData[]
@@ -180,37 +182,31 @@ export function ParticipationTable(props: {
         title={props.title}
         options={{
           search: !singleParticipant,
-          sorting: !singleParticipant,
+          sorting: false,
           paging: !singleParticipant,
           toolbar: !singleParticipant,
           padding: 'dense',
         }}
-        actions={
-          props.isEditable
-            ? [
-                {
-                  icon: 'edit',
-                  tooltip: 'Edit Participation',
-                  onClick: (event, rowData) => {
-                    dispatch({ type: 'SET_EDIT_STATE', payload: rowData })
-                    dispatch({ type: 'OPEN_MODAL' })
-                  },
-                },
-                {
-                  icon: 'delete',
-                  tooltip: 'Delete Participation',
-                  onClick: (event, rowData) => {
-                    if (Array.isArray(rowData)) {
-                      dispatch({ type: 'SET_DELETION_ID', payload: rowData[0].id })
-                    } else {
-                      dispatch({ type: 'SET_DELETION_ID', payload: rowData.id })
-                    }
-                    dispatch({ type: 'OPEN_DIALOG' })
-                  },
-                },
-              ]
-            : []
-        }
+        actions={[
+          (rowData: RankedParticipant) => ({
+            icon: 'edit',
+            tooltip: 'Edit Registration',
+            hidden: !(props.isEditable || rowData.userId === props.selfEditableUserId),
+            onClick: () => {
+              dispatch({ type: 'SET_EDIT_STATE', payload: rowData })
+              dispatch({ type: 'OPEN_MODAL' })
+            },
+          }),
+          (rowData: RankedParticipant) => ({
+            icon: 'delete',
+            tooltip: 'Delete Registration',
+            hidden: !props.isEditable,
+            onClick: () => {
+              dispatch({ type: 'SET_DELETION_ID', payload: rowData.id })
+              dispatch({ type: 'OPEN_DIALOG' })
+            },
+          }),
+        ]}
       />
       {state.modalOpen ? (
         <EditParticipationModal

@@ -133,35 +133,29 @@ export function TournamentParticipationPanel({
     () => uniqueParticipants.find((participant) => participant.userId === user?.discordId),
     [uniqueParticipants, user]
   )
-  const otherParticipants = useMemo(
-    () => uniqueParticipants.filter((p) => p.userId !== currentUserParticipation?.userId),
-    [uniqueParticipants, currentUserParticipation]
-  )
+  // current user's row first, then everyone else
+  const orderedParticipants = useMemo(() => {
+    const rest = uniqueParticipants.filter((p) => p.userId !== currentUserParticipation?.userId)
+    return currentUserParticipation ? [currentUserParticipation, ...rest] : rest
+  }, [uniqueParticipants, currentUserParticipation])
+
   return (
     <div className={classes.root}>
       <Typography variant="h6" align="center">
         Players
       </Typography>
       <Box>
-        {currentUserParticipation && (
+        {orderedParticipants.length > 0 && (
           <ParticipationTable
-            data={[currentUserParticipation]}
-            title="My Participation"
+            data={orderedParticipants}
+            title="Players"
             tournamentId={tournament.id}
             onUpdate={onUpdate}
             users={users}
-            isEditable={tournament.statusId === 'upcoming'}
-          />
-        )}
-
-        {otherParticipants.length > 0 && (
-          <ParticipationTable
-            data={otherParticipants}
-            title={currentUserParticipation ? 'Other Players' : 'Players'}
-            tournamentId={tournament.id}
-            onUpdate={onUpdate}
-            users={users}
-            isEditable={user && isAdmin(user)}
+            isEditable={!!user && isAdmin(user)}
+            selfEditableUserId={
+              tournament.statusId === 'upcoming' ? user?.discordId : undefined
+            }
           />
         )}
       </Box>
