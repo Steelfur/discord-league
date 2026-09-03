@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "short_name": "",
+  "name": "FaB League",
+  "short_name": "FaB League",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -13,7 +13,7 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
+  "theme_color": "#0b0b13",
+  "background_color": "#0a0b12",
   "display": "standalone"
 }
