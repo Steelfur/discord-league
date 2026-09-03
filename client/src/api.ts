@@ -54,6 +54,9 @@ export const api = forge({
       updateReport: { method: 'PUT', path: '/match/{matchId}/report' },
       deleteReport: { method: 'DELETE', path: '/match/{matchId}/report' },
     },
+    BracketMatch: {
+      report: { method: 'PUT', path: '/bracket-match/{matchId}' },
+    },
     Tournament: {
       findAll: { method: 'GET', path: '/tournament' },
       create: { method: 'POST', path: '/tournament' },

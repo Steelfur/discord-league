@@ -1,89 +1,41 @@
-import * as A from 'fp-ts/lib/Array'
-import { contramap, ordNumber } from 'fp-ts/lib/Ord'
-import { pipe } from 'fp-ts/lib/function'
-
-import challongeClient from '../../clients/challonge'
 import * as db from '../../gateways/storage'
-import { RankedParticipant } from '../../tournaments'
+import { generateBracket } from './generateBracket'
 
-const winRatioDESC = contramap<number, RankedParticipant>((p) => -(p.wins / (p.wins + p.losses)))(
-  ordNumber
-)
-const gamesPlayedDESC = contramap<number, RankedParticipant>((p) => -(p.wins + p.losses))(ordNumber)
-
-export async function processBrackets(
-  tournament: db.TournamentRecord,
-  podResults: Array<{ participants: RankedParticipant[] }>,
-  decklists: Array<{ participantId: number; locked: boolean }>
-): Promise<void> {
-  const [goldCupParticipants, silverCupParticipants] = pipe(
-    podResults,
-    A.chain((podResult) => podResult.participants),
-    A.reduce<RankedParticipant, [RankedParticipant[], RankedParticipant[]]>(
-      [[], []],
-      (acc, participant) => {
-        switch (participant.bracket) {
-          case 'goldCup':
-            return [[...acc[0], participant], acc[1]]
-          case 'silverCup':
-            return [acc[0], [...acc[1], participant]]
-          default:
-            return acc
-        }
-      }
-    ),
-    A.map(A.sortBy([winRatioDESC, gamesPlayedDESC])),
-    A.map((participants) =>
-      A.comprehension(
-        [participants, decklists],
-        (participant) => participant,
-        (participant, decklist) => decklist.participantId === participant.id && decklist.locked
-      )
-    )
-  )
-
-  await Promise.all([
-    createOnChallonge(tournament, 'Gold', goldCupParticipants),
-    createOnChallonge(tournament, 'Silver', silverCupParticipants),
-  ])
+interface StandingParticipant {
+  id: number
+  wins: number
+  losses: number
+  dropped: boolean
 }
 
-async function createOnChallonge(
-  tournamentRecord: db.TournamentRecord,
-  cup: 'Gold' | 'Silver',
-  participants: RankedParticipant[]
-) {
-  if (participants.length === 0) {
-    return null
+interface PodLike {
+  participants: StandingParticipant[]
+}
+
+/**
+ * Seed and persist the double-elimination bracket for a tournament.
+ *
+ * Cut = everyone who finished the group stage with a winning record. Seeding:
+ * wins, then strength of schedule (average win rate of your pod opponents),
+ * then fewest losses.
+ */
+export async function processBrackets(tournamentId: number, pods: PodLike[]): Promise<void> {
+  const seeded: Array<{ id: number; wins: number; losses: number; sos: number }> = []
+
+  for (const pod of pods) {
+    const active = pod.participants.filter((p) => !p.dropped)
+    for (const p of active) {
+      const opponents = active.filter((o) => o.id !== p.id)
+      const rates = opponents.map((o) => (o.wins + o.losses > 0 ? o.wins / (o.wins + o.losses) : 0))
+      const sos = rates.length ? rates.reduce((a, b) => a + b, 0) / rates.length : 0
+      seeded.push({ id: p.id, wins: p.wins, losses: p.losses, sos })
+    }
   }
 
-  const challongeTournamentNotStarted = await challongeClient.createTournament({
-    name: `${cup} Cup - ${tournamentRecord.name}`,
-    tournament_type: 'single elimination',
-    accept_attachments: true,
-    show_rounds: true,
-  })
+  const cut = seeded
+    .filter((p) => p.wins > p.losses)
+    .sort((a, b) => b.wins - a.wins || b.sos - a.sos || a.losses - b.losses)
 
-  await challongeClient.addParticipantsToTournament(
-    challongeTournamentNotStarted.id,
-    participants.map((p) => ({
-      name: nameInChallongeBracket(p),
-      misc: `participantId: ${p.id}`,
-    }))
-  )
-
-  const challongeTournament = await challongeClient.startTournament(
-    challongeTournamentNotStarted.id
-  )
-
-  return db.createBracket({
-    bracket: cup === 'Gold' ? 'goldCup' : 'silverCup',
-    tournamentId: tournamentRecord.id,
-    challongeTournamentId: challongeTournament.id,
-    url: challongeTournament.full_challonge_url,
-  })
-}
-
-function nameInChallongeBracket(p: RankedParticipant) {
-  return p.discordTag
+  const local = generateBracket(cut.map((p) => p.id))
+  await db.createBracketMatches(tournamentId, local)
 }

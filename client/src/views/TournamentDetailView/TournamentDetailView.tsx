@@ -33,7 +33,7 @@ export function TournamentDetailView() {
 
   return (
     <TournamentDetail
-      brackets={tournament.data.brackets}
+      bracketMatches={tournament.data.bracketMatches}
       participants={tournament.data.participants}
       pods={tournament.data.pods}
       tournament={tournament.data.tournament}

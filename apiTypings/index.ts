@@ -2,12 +2,26 @@ export type WithParsedDates<T, K extends keyof T> = {
   [P in keyof T]: P extends K ? Date : T[P]
 }
 
-export interface Bracket {
+export interface BracketMatch {
   id: number
   tournamentId: number
-  bracket: 'silverCup' | 'goldCup'
-  challongeTournamentId: number
-  url: string
+  side: 'winners' | 'losers' | 'grandFinal'
+  round: number
+  slot: number
+  participantAId: number | null
+  participantBId: number | null
+  winnerId: number | null
+  seedA: number | null
+  seedB: number | null
+  winnerToId: number | null
+  winnerToSlot: 'A' | 'B' | null
+  loserToId: number | null
+  loserToSlot: 'A' | 'B' | null
+}
+
+export interface BracketMatch$report {
+  request: { params: { matchId: string }; body: { winnerId: number } }
+  response: void
 }
 
 export interface Class {
@@ -273,7 +287,7 @@ export interface Tournament$findById {
   response: {
     tournament: Tournament
     pods: PodResult[]
-    brackets: Bracket[]
+    bracketMatches: BracketMatch[]
     participants: RankedParticipant[]
   }
 }

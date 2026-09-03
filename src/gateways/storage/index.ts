@@ -1,4 +1,10 @@
-export { createBracket, fetchBrackets } from './private/bracket'
+export {
+  BracketMatchRecord,
+  fetchBracketMatches,
+  fetchBracketMatchById,
+  createBracketMatches,
+  applyBracketResult,
+} from './private/bracket'
 
 export {
   ClassRecord,

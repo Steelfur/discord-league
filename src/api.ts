@@ -16,6 +16,7 @@ import * as startGroupStage from './handlers/startGroupStage'
 import * as closeGroupStage from './handlers/closeGroupStage'
 import * as startBracketStage from './handlers/startBracketStage'
 import * as closeBracketStage from './handlers/closeBracketStage'
+import * as reportBracketMatch from './handlers/reportBracketMatch'
 import * as getAllTournaments from './handlers/getAllTournaments'
 import * as getAllUsers from './handlers/getAllUsers'
 import * as getUser from './handlers/getUser'
@@ -137,6 +138,12 @@ export default (): AsyncRouterInstance => {
     authenticate,
     onlyAdmin,
     closeBracketStage.handler
+  )
+  api.put(
+    '/bracket-match/:matchId',
+    authenticate,
+    validate(reportBracketMatch.schema),
+    reportBracketMatch.handler
   )
 
   api.post('/participant/:participantId/drop', authenticate, dropParticipant.handler)

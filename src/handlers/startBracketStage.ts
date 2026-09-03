@@ -23,16 +23,7 @@ export async function handler(
     return
   }
 
-  await Promise.all([
-    db.lockTournamentDecklists(tournamentId),
-    db.updateTournament(tournamentId, { statusId: 'bracket' }),
-  ])
-
-  const [decklists, podRecords] = await Promise.all([
-    db.fetchTournamentDecklists(tournamentRecord.id, { isAdmin: true }),
-    db.fetchTournamentPods(tournamentRecord.id),
-  ])
-
+  const podRecords = await db.fetchTournamentPods(tournamentRecord.id)
   const matchRecords = await db.fetchMatchesForMultiplePods(podRecords.map((pod) => pod.id))
   const participantRecords = await db.fetchMultipleParticipantsWithUserData(
     matchRecords.flatMap((match) => [match.playerAId, match.playerBId])
@@ -41,7 +32,12 @@ export async function handler(
   const tournament = toTournament(tournamentRecord, podRecords, matchRecords, participantRecords)
   const podResults = tournament.toPodResults()
 
-  await processBrackets(tournamentRecord, podResults, decklists)
+  await processBrackets(tournamentRecord.id, podResults)
+
+  await Promise.all([
+    db.lockTournamentDecklists(tournamentId),
+    db.updateTournament(tournamentId, { statusId: 'bracket' }),
+  ])
 
   res.sendStatus(200)
 }

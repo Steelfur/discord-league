@@ -1,11 +1,7 @@
-import { Tournament$findById, Bracket } from '@dl/api'
+import { Tournament$findById } from '@dl/api'
 import { Request, Response } from 'express'
 import * as db from '../gateways/storage'
 import { toTournament } from '../tournaments'
-
-function sortBrackets(brackets: Bracket[]) {
-  return brackets.sort((a) => (a.bracket === 'goldCup' ? -1 : 1))
-}
 
 export async function handler(
   req: Request<Tournament$findById['request']['params']>,
@@ -23,10 +19,10 @@ export async function handler(
     return
   }
 
-  const [participantRecords, podRecords, brackets] = await Promise.all([
+  const [participantRecords, podRecords, bracketMatches] = await Promise.all([
     db.fetchParticipants(tournamentRecord.id),
     db.fetchTournamentPods(tournamentRecord.id),
-    db.fetchBrackets(tournamentRecord.id),
+    db.fetchBracketMatches(tournamentRecord.id),
   ])
 
   const matchRecords = await db.fetchMatchesForMultiplePods(podRecords.map((pod) => pod.id))
@@ -42,7 +38,7 @@ export async function handler(
   res.status(200).send({
     tournament: { ...tournamentRecord, startDate: tournamentRecord.startDate.toJSON() },
     pods,
-    brackets: sortBrackets(brackets),
+    bracketMatches,
     participants,
   })
 }

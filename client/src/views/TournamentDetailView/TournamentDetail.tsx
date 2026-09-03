@@ -1,5 +1,5 @@
-import { User$findAll, RankedParticipant, Tournament, Bracket, PodResult } from '@dl/api'
-import { useCallback, useState } from 'react'
+import { User$findAll, RankedParticipant, Tournament, BracketMatch, PodResult } from '@dl/api'
+import { useCallback, useContext, useState } from 'react'
 import {
   Container,
   createStyles,
@@ -12,6 +12,7 @@ import {
 } from '@material-ui/core'
 
 import { api } from '../../api'
+import { UserContext } from '../../App'
 import { BracketDisplay } from '../../components/BracketDisplay/BracketDisplay'
 import { TournamentAdminPanel } from '../../components/TournamentAdminPanel'
 import { TournamentCupClassification } from '../../components/TournamentCupClassification'
@@ -83,19 +84,20 @@ export function TournamentDetail({
   tournament,
   pods,
   users,
-  brackets,
+  bracketMatches,
   participants,
   onTournamentUpdate,
 }: {
   tournament: Tournament
   pods: PodResult[]
-  brackets: Bracket[]
+  bracketMatches: BracketMatch[]
   users: User$findAll['response']
   participants: RankedParticipant[]
   onTournamentUpdate: () => void
 }) {
   const classes = useStyles()
   const isAdmin = useIsAdmin()
+  const currentUser = useContext(UserContext)
   const [activeTab, setActiveTab] = useState(() => initialTab(tournament))
   const finishGroupPhase = useFinishGroupPhase(tournament.id, onTournamentUpdate)
   const startBracketPhase = useStartBracketPhase(tournament.id, onTournamentUpdate)
@@ -136,8 +138,15 @@ export function TournamentDetail({
             {isAdmin && <Tab label="Admin" value="admin" />}
           </Tabs>
 
-          {activeTab === 'brackets' &&
-            brackets.map((bracket) => <BracketDisplay bracket={bracket} key={bracket.id} />)}
+          {activeTab === 'brackets' && (
+            <BracketDisplay
+              bracketMatches={bracketMatches}
+              participants={participants}
+              isAdmin={isAdmin}
+              currentUserDiscordId={currentUser?.discordId}
+              onReported={onTournamentUpdate}
+            />
+          )}
 
           {activeTab === 'decklists' && (
             <TournamentCupClassification tournamentId={tournament.id} participants={participants} />
