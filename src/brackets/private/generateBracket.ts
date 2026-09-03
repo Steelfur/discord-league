@@ -183,10 +183,11 @@ interface Feeder {
 }
 
 /**
- * Remove bye paths produced by a non-power-of-2 field:
- *  - a real participant with no opponent auto-advances (the empty match is dropped)
- *  - a slot fed by a match whose sibling slot can never fill collapses: the feeder
- *    is rewired straight to where this match's winner would have gone.
+ * Resolve bye paths produced by a non-power-of-2 field:
+ *  - a real participant with no opponent gets a visible, pre-decided bye and is
+ *    placed into the next round
+ *  - a slot fed by a match whose sibling can never fill collapses: the feeder is
+ *    rewired straight past it, and the empty match is dropped
  */
 function pruneByes(matchMap: Map<string, LocalMatch>): LocalMatch[] {
   const removed = new Set<string>()
@@ -227,22 +228,29 @@ function pruneByes(matchMap: Map<string, LocalMatch>): LocalMatch[] {
 
       const participant = liveSlot === 'A' ? m.participantAId : m.participantBId
       if (participant != null) {
-        // real player, no opponent: advance them and drop this match
+        // real player, no opponent this round: a bye. Keep it visible, resolved,
+        // and place the player into the next round.
+        m.winnerId = participant
         if (m.winnerToKey) {
           const dest = matchMap.get(m.winnerToKey)!
           if (m.winnerToSlot === 'A') dest.participantAId = participant
           else dest.participantBId = participant
         }
+        // a bye produces no loser — kill its loser routing so the downstream
+        // losers-bracket slot collapses rather than waiting forever.
+        m.loserToKey = null
+        m.loserToSlot = null
+        changed = true
+        continue
+      }
+      // fed by a match whose sibling is dead: rewire that feeder past us, drop us
+      const feeder = feeders.get(`${m.key}:${liveSlot}`)!
+      if (feeder.outcome === 'winner') {
+        feeder.match.winnerToKey = m.winnerToKey
+        feeder.match.winnerToSlot = m.winnerToSlot
       } else {
-        // fed by a match whose sibling is dead: rewire that feeder past us
-        const feeder = feeders.get(`${m.key}:${liveSlot}`)!
-        if (feeder.outcome === 'winner') {
-          feeder.match.winnerToKey = m.winnerToKey
-          feeder.match.winnerToSlot = m.winnerToSlot
-        } else {
-          feeder.match.loserToKey = m.winnerToKey
-          feeder.match.loserToSlot = m.winnerToSlot
-        }
+        feeder.match.loserToKey = m.winnerToKey
+        feeder.match.loserToSlot = m.winnerToSlot
       }
       removed.add(m.key)
       changed = true

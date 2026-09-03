@@ -50,5 +50,5 @@ Sign in once, then in the database:
 7. Railway builds with `yarn build` and starts with `yarn start`, which runs
    the migrations before booting. Redeploys happen automatically on push.
 
-Challonge (end-of-season bracket) is optional and not wired to Challonge's
-current API yet — leave `CHALLONGE_*` blank.
+The bracket stage is a built-in double-elimination bracket — no Challonge or
+other external service.

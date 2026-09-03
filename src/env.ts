@@ -7,8 +7,6 @@ const host =
     : `http://localhost:${process.env.PORT || 8080}`)
 
 export default {
-  challongeApiKey: String(process.env.CHALLONGE_API_KEY),
-  challongeUsername: String(process.env.CHALLONGE_USERNAME),
   databaseUrl: String(process.env.DATABASE_URL),
   discordBotToken: String(process.env.DISCORD_BOT_TOKEN),
   discordClientId: String(process.env.DISCORD_CLIENT_ID),

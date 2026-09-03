@@ -12,11 +12,12 @@ type CanReport = (m: BracketMatch) => boolean
 function nameOf(
   participants: RankedParticipant[],
   id: number | null,
-  seed: number | null
+  seed: number | null,
+  hasWinner = false
 ): string {
   if (id != null) return participants.find((p) => p.id === id)?.discordTag ?? `#${id}`
   if (seed != null) return `Seed ${seed}`
-  return 'TBD'
+  return hasWinner ? 'Bye' : 'TBD'
 }
 
 const MatchCard: FC<{
@@ -104,7 +105,7 @@ const MatchCard: FC<{
               visibility: heroId ? 'visible' : 'hidden',
             }}
           />
-          <span>{nameOf(participants, id, seed)}</span>
+          <span>{nameOf(participants, id, seed, match.winnerId != null)}</span>
         </div>
         {heroName && (
           <div style={{ fontSize: 11, color: '#666', marginLeft: 15 }}>{heroName}</div>
@@ -165,10 +166,10 @@ const Half: FC<{
     <div style={{ marginBottom: 24 }}>
       <Typography variant="h6">{heading}</Typography>
       <div style={{ display: 'flex', gap: 24, overflowX: 'auto', padding: '8px 0' }}>
-        {rounds.map((round) => (
+        {rounds.map((round, roundIdx) => (
           <div key={round} style={{ display: 'flex', flexDirection: 'column' }}>
             <Typography variant="caption" style={{ textAlign: 'center', fontWeight: 700 }}>
-              Round {round}
+              Round {roundIdx + 1}
             </Typography>
             <div
               style={{

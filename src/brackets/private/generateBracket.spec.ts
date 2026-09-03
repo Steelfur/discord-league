@@ -64,11 +64,14 @@ test('generateBracket: fewer than two players yields no bracket', (t) => {
   t.deepEqual(generateBracket([1]), [])
 })
 
-test('generateBracket(3): the bye match is pruned and seed 1 starts in the WB final', (t) => {
+test('generateBracket(3): seed 1 gets a visible, pre-decided bye into the WB final', (t) => {
   const map = byKey(generateBracket(ids(3)))
-  t.false(map.has('W-1-0'), 'seed 1 vs bye is removed, not left as a stub')
+  const bye = map.get('W-1-0')!
+  t.is(bye.participantAId, 1)
+  t.is(bye.participantBId, null)
+  t.is(bye.winnerId, 1, 'the bye is already decided')
   const wbFinal = map.get('W-2-0')!
-  t.is(wbFinal.participantAId, 1, 'seed 1 is placed straight into the WB final')
+  t.is(wbFinal.participantAId, 1, 'seed 1 is placed into the WB final')
 })
 
 // Play a whole bracket through (higher seed always wins) and check the double
