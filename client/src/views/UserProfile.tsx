@@ -20,8 +20,8 @@ import { UserContext } from '../App'
 import { UserAvatar } from '../components/UserAvatar/UserAvatar'
 import { MessageSnackBar } from '../components/MessageSnackBar'
 import { isAdmin } from '../hooks/useUsers'
-import { ClanMon } from '../components/ClanMon/ClanMon'
-import { ClanSelect } from '../components/ClanSelect'
+import { HeroTag } from '../components/HeroTag'
+import { HeroSelect } from '../components/HeroSelect'
 import { Loading } from '../components/Loading'
 import { RequestError } from '../components/RequestError'
 import { EmptyState } from '../components/EmptyState'
@@ -54,8 +54,8 @@ interface State {
   snackBarMessage?: string
   snackBarError?: boolean
   canToggle: boolean
-  newJigokuName?: string
-  newPreferredClanId?: number
+  newGemId?: string
+  newPreferredHeroId?: number
 }
 
 function init(): State {
@@ -72,8 +72,8 @@ type Action =
   | { type: 'permissions.change.success' }
   | { type: 'permissions.change.error'; payload: string }
   | { type: 'editMode.start' }
-  | { type: 'editMode.jigokuName.edit'; payload: string }
-  | { type: 'editMode.preferredClan.edit'; payload?: number }
+  | { type: 'editMode.gemId.edit'; payload: string }
+  | { type: 'editMode.preferredHero.edit'; payload?: number }
   | { type: 'editMode.sendRequest' }
   | { type: 'editMode.success' }
   | { type: 'editMode.error'; payload: string }
@@ -93,10 +93,10 @@ function reducer(state: State, action: Action): State {
       return { ...state, canToggle: true, snackBarMessage: action.payload, snackBarError: true }
     case 'editMode.start':
       return { ...state, isEditModeEnabled: true }
-    case 'editMode.jigokuName.edit':
-      return { ...state, newJigokuName: action.payload }
-    case 'editMode.preferredClan.edit':
-      return { ...state, newPreferredClanId: action.payload }
+    case 'editMode.gemId.edit':
+      return { ...state, newGemId: action.payload }
+    case 'editMode.preferredHero.edit':
+      return { ...state, newPreferredHeroId: action.payload }
     case 'editMode.sendRequest':
       return { ...state, isUpdating: true }
     case 'editMode.success':
@@ -147,11 +147,11 @@ function useUpdateUserProfile(
     }
 
     const updates: User$patchById['request']['body'] = {}
-    if (typeof state.newJigokuName === 'string') {
-      updates.jigokuName = state.newJigokuName
+    if (typeof state.newGemId === 'string') {
+      updates.gemId = state.newGemId
     }
-    if (typeof state.newPreferredClanId === 'number') {
-      updates.preferredClanId = state.newPreferredClanId
+    if (typeof state.newPreferredHeroId === 'number') {
+      updates.preferredHeroId = state.newPreferredHeroId
     }
 
     api.User.patchById({ userId: discordId, body: updates })
@@ -220,35 +220,35 @@ export function UserProfile() {
           <Grid item xs={6} className={classes.formContainer}>
             <Container>
               <Typography>
-                Jigoku Name:{' '}
+                GEM ID:{' '}
                 {state.isEditModeEnabled ? (
                   <TextField
-                    id="jigokuName"
-                    value={state.newJigokuName ?? data.data.jigokuName}
+                    id="gemId"
+                    value={state.newGemId ?? data.data.gemId}
                     onChange={({ currentTarget: { value } }) =>
-                      dispatch({ type: 'editMode.jigokuName.edit', payload: value })
+                      dispatch({ type: 'editMode.gemId.edit', payload: value })
                     }
                   />
                 ) : (
-                  data.data.jigokuName
+                  data.data.gemId
                 )}
               </Typography>
             </Container>
             <br />
             <Container>
               <Typography>
-                Preferred Clan:{' '}
+                Preferred Hero:{' '}
                 {state.isEditModeEnabled ? (
-                  <ClanSelect
-                    preferredClanId={state.newPreferredClanId}
-                    neutralAllowed
-                    label="Preferred Clan"
-                    onChange={(clanId) =>
-                      dispatch({ type: 'editMode.preferredClan.edit', payload: clanId })
+                  <HeroSelect
+                    heroId={state.newPreferredHeroId}
+                    allowNone
+                    label="Preferred Hero"
+                    onChange={(heroId) =>
+                      dispatch({ type: 'editMode.preferredHero.edit', payload: heroId })
                     }
                   />
                 ) : (
-                  <ClanMon clanId={data.data.preferredClanId} />
+                  <HeroTag heroId={data.data.preferredHeroId} showClass />
                 )}
               </Typography>
             </Container>

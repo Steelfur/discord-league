@@ -19,8 +19,7 @@ import { UserContext } from '../App'
 import { api } from '../api'
 import { isAdmin } from '../hooks/useUsers'
 import { ReportMatchModal, MatchReportState } from '../modals/ReportMatchModal'
-import { getVictoryConditionForId } from '../utils/victoryConditionsUtils'
-import { ClanMon } from './ClanMon/ClanMon'
+import { ClassDot } from './HeroTag'
 import { DeletionDialog } from './DeletionDialog'
 import { MessageSnackBar } from './MessageSnackBar'
 import { UserAvatar } from './UserAvatar/UserAvatar'
@@ -154,6 +153,14 @@ export function MatchCard(props: {
   }
 
   const winner = getWinner(props.match.winnerId)
+  const reported = props.match.winnerId != null || props.match.isDraw || props.match.noShow
+  const resultText = props.match.isDraw
+    ? 'Result: Draw'
+    : winner
+    ? `Winner: ${winner.discordTag}${props.match.noShow ? ' (opponent no-show)' : ''}`
+    : props.match.noShow
+    ? 'Result: Double no-show'
+    : ''
 
   return (
     <Card className={classes.card}>
@@ -162,7 +169,7 @@ export function MatchCard(props: {
           <Grid item xs={12} md={3}>
             <Grid container>
               <Grid item xs={1}>
-                <ClanMon clanId={props.match.deckAClanId} small />
+                <ClassDot heroId={props.match.playerAHeroId} small />
               </Grid>
               <Grid item xs={2}>
                 <UserAvatar
@@ -182,7 +189,7 @@ export function MatchCard(props: {
           <Grid item xs={12} md={3}>
             <Grid container>
               <Grid item xs={1}>
-                <ClanMon clanId={props.match.deckBClanId} small />
+                <ClassDot heroId={props.match.playerBHeroId} small />
               </Grid>
               <Grid item xs={2}>
                 <UserAvatar
@@ -194,7 +201,7 @@ export function MatchCard(props: {
               </Grid>
             </Grid>
           </Grid>
-          {!props.match.winnerId &&
+          {!reported &&
             (user?.discordId === props.participantA.userId ||
               user?.discordId === props.participantB.userId) && (
               <Button
@@ -207,19 +214,16 @@ export function MatchCard(props: {
               </Button>
             )}
         </Grid>
-        {winner && (
+        {reported && (
           <Grid container>
             <br />
             <Divider />
             <Grid item xs={12}>
-              <Typography>
-                Winner: {winner.discordTag}, Victory Condition:{' '}
-                {getVictoryConditionForId(props.match.victoryConditionId)}
-              </Typography>
+              <Typography>{resultText}</Typography>
             </Grid>
           </Grid>
         )}
-        {winner && isAdmin(user) && (
+        {reported && isAdmin(user) && (
           <div className={classes.button}>
             <Fab
               color="primary"

@@ -6,8 +6,6 @@ import { UserContext } from '../App'
 import { api } from '../api'
 import { isAdmin } from '../hooks/useUsers'
 import { EditParticipationModal } from '../modals/EditParticipationModal'
-import { clans } from '../utils/clanUtils'
-import { timezones } from '../utils/timezoneUtils'
 import { MessageSnackBar } from './MessageSnackBar'
 import { ParticipationTable } from './ParticipationTable'
 import { PlayersPieChart } from './PlayersPieChart'
@@ -82,10 +80,10 @@ const useCreateParticipant = (
   participants: any[]
 ) =>
   useCallback(
-    (userId: string, clanId: number, timezoneId: number, timezonePreferenceId: string) => {
+    (userId: string, heroId: number, timezoneId: number, timezonePreferenceId: string) => {
       api.Tournament.createParticipant({
         tournamentId,
-        body: { userId, clanId, timezoneId, timezonePreferenceId },
+        body: { userId, heroId, timezoneId, timezonePreferenceId },
       })
         .then((resp) => {
           dispatch({
@@ -123,24 +121,6 @@ export function TournamentParticipationPanel({
     () => participants.find((participant) => participant.userId === user?.discordId),
     [participants, user]
   )
-  const pieChartData = useMemo(
-    () =>
-      clans.map((clan) => ({
-        color: clan.color,
-        title: clan.name,
-        value: participants.filter((participant) => participant.clanId === clan.clanId).length,
-      })),
-    [participants]
-  )
-  const timezoneData = useMemo(
-    () =>
-      timezones.map((timezone) => ({
-        title: timezone.timezone,
-        value: participants.filter((participant) => participant.timezoneId === timezone.id).length,
-      })),
-    [participants]
-  )
-
   return (
     <div className={classes.root}>
       <Typography variant="h6" align="center">
