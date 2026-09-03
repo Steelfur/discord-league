@@ -35,11 +35,18 @@ const useStyles = makeStyles((theme: Theme) =>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function showApiError(err: any) {
-  const msg =
+  // eslint-disable-next-line no-console
+  console.error('[FaB League] request failed:', err, {
+    status: typeof err?.status === 'function' ? err.status() : undefined,
+    data: typeof err?.data === 'function' ? err.data() : undefined,
+  })
+  const status = typeof err?.status === 'function' ? err.status() : undefined
+  const body =
     (typeof err?.data === 'function' && err.data()) ||
     (typeof err?.error === 'function' && err.error()) ||
-    'Something went wrong'
-  window.alert(typeof msg === 'string' ? msg : JSON.stringify(msg))
+    ''
+  const text = typeof body === 'string' && body ? body : JSON.stringify(body)
+  window.alert(`Request failed${status ? ` (${status})` : ''}: ${text || 'no details'}`)
 }
 
 const useFinishGroupPhase = (tournamentId: number, onSuccess: () => void) =>

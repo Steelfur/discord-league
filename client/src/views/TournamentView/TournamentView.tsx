@@ -99,6 +99,27 @@ export function TournamentView() {
   const [tournaments, refetchTournaments] = useTournaments()
   const createTournament = useCreateTournament(dispatch, refetchTournaments)
 
+  function seedTestTournament() {
+    if (
+      !window.confirm(
+        'Generate a test tournament with 18 fake players, start the group stage, and fill in random results?'
+      )
+    )
+      return
+    api.Tournament.seedTest({ body: { players: 18, start: true, withResults: true } })
+      .then(() => {
+        dispatch({ type: 'SUCCESS', payload: 'Test tournament created.' })
+        refetchTournaments()
+      })
+      .catch((e: unknown) => {
+        const d =
+          e && typeof (e as { data?: () => unknown }).data === 'function'
+            ? String((e as { data: () => unknown }).data())
+            : ''
+        dispatch({ type: 'FAILURE', payload: d || 'Could not create the test tournament' })
+      })
+  }
+
   if (typeof tournaments.error === 'string') {
     return <RequestError requestError={tournaments.error} />
   }
@@ -129,16 +150,20 @@ export function TournamentView() {
         message={state.snackBarMessage}
       />
       {isAdmin && (
-        <Fab
-          color="primary"
-          aria-label="edit"
-          variant="extended"
-          className={classes.fab}
-          onClick={() => dispatch({ type: 'OPEN_MODAL' })}
-        >
-          <AddIcon />
-          New Tournament
-        </Fab>
+        <div className={classes.fab} style={{ display: 'flex', gap: 8 }}>
+          <Fab color="default" variant="extended" onClick={seedTestTournament}>
+            🧪 Test Tournament
+          </Fab>
+          <Fab
+            color="primary"
+            aria-label="new tournament"
+            variant="extended"
+            onClick={() => dispatch({ type: 'OPEN_MODAL' })}
+          >
+            <AddIcon />
+            New Tournament
+          </Fab>
+        </div>
       )}
     </>
   )

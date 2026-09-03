@@ -64,7 +64,7 @@ export async function regeneratePodsHandler(
 
   await db.deleteTournamentPodsAndMatches(id)
   const participants = await db.fetchParticipants(id)
-  await createPodsForParticipants(id, tournament.typeId, req.body.deadline, participants)
+  await createPodsForParticipants(id, req.body.deadline, participants)
   res.sendStatus(200)
 }
 

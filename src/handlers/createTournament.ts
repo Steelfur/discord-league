@@ -8,14 +8,15 @@ export const schema = {
   body: Joi.object<{
     name: string
     startDate: Date
-    status: 'upcoming' | 'group' | 'endOfGroup' | 'bracket' | 'finished'
-    type: 'monthly' | 'pod6'
+    status?: 'upcoming' | 'group' | 'endOfGroup' | 'bracket' | 'finished'
+    type?: string
     description?: string
   }>({
     name: Joi.string().required(),
     startDate: Joi.date().required(),
-    status: Joi.string().valid('upcoming', 'group', 'endOfGroup', 'bracket', 'finished').required(),
-    type: Joi.string().valid('monthly', 'pod6').required(),
+    status: Joi.string().valid('upcoming', 'group', 'endOfGroup', 'bracket', 'finished').optional(),
+    // Accepted for backwards compatibility; there is only one format now.
+    type: Joi.string().optional(),
     description: Joi.string().allow('').optional(),
   }),
 }
@@ -27,8 +28,8 @@ export async function handler(
   const season = await db.createTournament({
     name: req.body.name,
     startDate: req.body.startDate,
-    statusId: req.body.status,
-    typeId: req.body.type,
+    statusId: req.body.status ?? 'upcoming',
+    typeId: 'pod6',
     description: req.body.description,
   })
 

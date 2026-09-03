@@ -83,6 +83,7 @@ export const api = forge({
       setStatus: { method: 'PATCH', path: '/tournament/{tournamentId}/status' },
       regeneratePods: { method: 'POST', path: '/tournament/{tournamentId}/regenerate-pods' },
       reseedBracket: { method: 'POST', path: '/tournament/{tournamentId}/reseed-bracket' },
+      seedTest: { method: 'POST', path: '/tournament/seed-test' },
     },
     User: {
       findAll: { method: 'GET', path: '/user' },

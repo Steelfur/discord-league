@@ -19,6 +19,7 @@ import * as closeBracketStage from './handlers/closeBracketStage'
 import * as reportBracketMatch from './handlers/reportBracketMatch'
 import * as adminOverrides from './handlers/adminOverrides'
 import * as podAdmin from './handlers/podAdmin'
+import * as seedTestTournament from './handlers/seedTestTournament'
 import * as getAllTournaments from './handlers/getAllTournaments'
 import * as getAllUsers from './handlers/getAllUsers'
 import * as getUser from './handlers/getUser'
@@ -92,6 +93,13 @@ export default (): AsyncRouterInstance => {
     onlyAdmin,
     validate(createTournament.schema),
     createTournament.handler
+  )
+  api.post(
+    '/tournament/seed-test',
+    authenticate,
+    onlyAdmin,
+    validate(seedTestTournament.schema),
+    seedTestTournament.handler
   )
   api.get('/tournament/:tournamentId', getTournament.handler)
   api.get('/tournament/:tournamentId/statistics', getTournamentStatistics.handler)

@@ -34,7 +34,7 @@ export async function handler(
   await db.updateTournament(tournament.id, { statusId: 'group' })
 
   const participants = await db.fetchParticipants(tournamentId)
-  await createPodsForParticipants(tournamentId, tournament.typeId, req.body.deadline, participants)
+  await createPodsForParticipants(tournamentId, req.body.deadline, participants)
 
   res.sendStatus(201)
 }

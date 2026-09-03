@@ -12,7 +12,7 @@ export const schema = {
     statusId: Joi.string()
       .valid('upcoming', 'group', 'endOfGroup', 'bracket', 'finished')
       .required(),
-    typeId: Joi.string().valid('monthly', 'pod6').required(),
+    typeId: Joi.string().optional(),
     description: Joi.string().allow('').optional(),
   }),
 }

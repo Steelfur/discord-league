@@ -4,19 +4,18 @@ import { matchesForPod } from './private/matchesForPod'
 import { namePods } from './private/podNames'
 import { Player } from './private/types'
 
-const podSizeFor = (typeId: 'monthly' | 'pod6'): number => (typeId === 'pod6' ? 6 : 8)
+const POD_SIZE = 6
 
 /**
- * Randomly split `participants` into pods, create the pod rows and every
+ * Randomly split `participants` into pods of ~6, create the pod rows and every
  * round-robin match, all tagged with `deadline`.
  */
 export async function createPodsForParticipants(
   tournamentId: number,
-  typeId: 'monthly' | 'pod6',
   deadline: Date,
   participants: Player[]
 ): Promise<void> {
-  const pods = groupParticipantsInPods(podSizeFor(typeId), participants)
+  const pods = groupParticipantsInPods(POD_SIZE, participants)
   const namedPods = namePods(pods)
 
   await Promise.all(

@@ -1,6 +1,6 @@
 import { Tournament, RankedParticipant, UserRowData } from '@dl/api'
 import { Typography, Button, makeStyles, Theme, createStyles, Box } from '@material-ui/core'
-import { useCallback, useReducer, useContext, useMemo } from 'react'
+import { useCallback, useReducer, useContext, useMemo, useState } from 'react'
 
 import { UserContext } from '../App'
 import { api } from '../api'
@@ -75,32 +75,39 @@ function reducer(state: State, action: any) {
 
 const useCreateParticipant = (
   tournamentId: number,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   dispatch: any,
-  setParticipants: any,
-  participants: any[]
-) =>
-  useCallback(
+  onUpdate: () => void
+) => {
+  const [submitting, setSubmitting] = useState(false)
+  const createParticipant = useCallback(
     (userId: string, heroId: number) => {
-      api.Tournament.createParticipant({
-        tournamentId,
-        body: { userId, heroId },
-      })
-        .then((resp) => {
+      if (submitting) return
+      setSubmitting(true)
+      api.Tournament.createParticipant({ tournamentId, body: { userId, heroId } })
+        .then(() => {
           dispatch({
             type: 'SUCCESS',
             payload: "You've successfully registered for the tournament.",
           })
-          setParticipants([...participants, resp.data])
+          onUpdate()
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
+          const detail =
+            error && typeof (error as { data?: () => unknown }).data === 'function'
+              ? String((error as { data: () => unknown }).data())
+              : ''
           dispatch({
             type: 'FAILURE',
-            payload: 'An error occurred during tournament registration: ' + error.data,
+            payload: detail || 'An error occurred during tournament registration.',
           })
         })
+        .finally(() => setSubmitting(false))
     },
-    [dispatch, participants, setParticipants, tournamentId]
+    [dispatch, onUpdate, tournamentId, submitting]
   )
+  return createParticipant
+}
 
 export function TournamentParticipationPanel({
   tournament,
@@ -116,7 +123,7 @@ export function TournamentParticipationPanel({
   const classes = useStyles()
   const [state, dispatch] = useReducer(reducer, initialState)
   const user = useContext(UserContext)
-  const createParticipant = useCreateParticipant(tournament.id, dispatch, onUpdate, participants)
+  const createParticipant = useCreateParticipant(tournament.id, dispatch, onUpdate)
   const currentUserParticipation = useMemo(
     () => participants.find((participant) => participant.userId === user?.discordId),
     [participants, user]
