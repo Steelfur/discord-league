@@ -1,8 +1,6 @@
 import { Request, Response } from 'express'
-import * as E from 'fp-ts/lib/Either'
-import * as A from 'fp-ts/lib/Array'
-import { pipe } from 'fp-ts/lib/function'
 import { toTournament } from '../tournaments'
+import { computeCut } from '../brackets'
 
 import * as db from '../gateways/storage'
 
@@ -46,22 +44,17 @@ export async function handler(
   const tournament = toTournament(tournamentRecord, pods, matches, participants)
   const podResults = tournament.toPodResults()
 
-  const { left: goldParticipantIds, right: silverParticipantIds } = pipe(
-    podResults,
-    A.chain((result) =>
-      pipe(
-        result.participants,
-        A.filter(({ bracket }) => bracket === 'goldCup' || bracket === 'silverCup'),
-        A.map(({ bracket, id }) => (bracket === 'goldCup' ? E.left(id) : E.right(id)))
-      )
-    ),
-    A.separate
-  )
+  // Everyone with a winning record makes the cut into the bracket. `bracket`
+  // is reused as an "in the cut" flag ('goldCup' = in, null = out).
+  const cutIds = new Set(computeCut(podResults))
+  const allIds = podResults.flatMap((p) => p.participants.map((x) => x.id))
+  const inCut = allIds.filter((id) => cutIds.has(id))
+  const out = allIds.filter((id) => !cutIds.has(id))
 
   await Promise.all([
     db.updateTournament(tournamentId, { statusId: 'endOfGroup' }),
-    db.updateParticipants(goldParticipantIds, { bracket: 'goldCup' }),
-    db.updateParticipants(silverParticipantIds, { bracket: 'silverCup' }),
+    db.updateParticipants(inCut, { bracket: 'goldCup' }),
+    db.updateParticipants(out, { bracket: null }),
   ])
 
   res.sendStatus(200)

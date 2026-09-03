@@ -19,19 +19,16 @@ import { isAdmin } from '../hooks/useUsers'
 import { SubmitDecklistModal } from '../modals/SubmitDecklistModal'
 import { UserAvatarAndClan } from './UserAvatar/UserAvatar'
 
-function groupByCup<P extends { heroId: number; bracket: 'goldCup' | 'silverCup' | null }>(
+// `bracket === 'goldCup'` is the "made the cut" flag. Split into in / out.
+function splitByCut<P extends { heroId: number; bracket: 'goldCup' | 'silverCup' | null }>(
   players: P[]
 ) {
   return players
     .sort((a, b) => a.heroId - b.heroId)
     .reduce<[P[], P[]]>(
-      (cups, participant) => {
-        if (participant.bracket === 'goldCup') {
-          cups[0].push(participant)
-        } else if (participant.bracket === 'silverCup') {
-          cups[1].push(participant)
-        }
-        return cups
+      (acc, participant) => {
+        acc[participant.bracket === 'goldCup' ? 0 : 1].push(participant)
+        return acc
       },
       [[], []]
     )
@@ -136,22 +133,22 @@ export const TournamentCupClassification = memo(
       return null
     }
 
-    const [goldParticipants, silverParticipants] = groupByCup(props.participants)
-    const [goldDecklists, silverDecklists] = groupByCup(decklistFetching.data)
+    const [inCutParticipants, eliminatedParticipants] = splitByCut(props.participants)
+    const [inCutDecklists, eliminatedDecklists] = splitByCut(decklistFetching.data)
 
     return (
       <Container>
         <DecklistsTable
-          title="Gold Cup"
-          decklists={goldDecklists}
-          participants={goldParticipants}
+          title="In the cut"
+          decklists={inCutDecklists}
+          participants={inCutParticipants}
           currentUser={currentUser}
           dispatch={dispatch}
         />
         <DecklistsTable
-          title="Silver Cup"
-          decklists={silverDecklists}
-          participants={silverParticipants}
+          title="Eliminated"
+          decklists={eliminatedDecklists}
+          participants={eliminatedParticipants}
           currentUser={currentUser}
           dispatch={dispatch}
         />
