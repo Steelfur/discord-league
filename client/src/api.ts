@@ -28,11 +28,15 @@ export const api = forge({
   resources: {
     Class: {
       findAll: { method: 'GET', path: '/class' },
+      create: { method: 'POST', path: '/class' },
+      update: { method: 'PATCH', path: '/class/{classId}' },
+      remove: { method: 'DELETE', path: '/class/{classId}' },
     },
     Hero: {
       findAll: { method: 'GET', path: '/hero' },
       create: { method: 'POST', path: '/hero' },
       update: { method: 'PATCH', path: '/hero/{heroId}' },
+      remove: { method: 'DELETE', path: '/hero/{heroId}' },
     },
     Decklist: {
       createForParticipant: { method: 'POST', path: '/participant/{participantId}/decklist' },

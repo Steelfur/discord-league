@@ -290,6 +290,24 @@ export interface Class$findAll {
   response: Class[]
 }
 
+export interface Class$create {
+  request: { body: { name: string } }
+  response: Class
+}
+
+export interface Class$update {
+  request: {
+    params: { classId: string }
+    body: Partial<{ name: string; sortOrder: number; active: boolean }>
+  }
+  response: Class
+}
+
+export interface Class$delete {
+  request: { params: { classId: string } }
+  response: void
+}
+
 export interface Hero$findAll {
   response: Hero[]
 }
@@ -305,4 +323,9 @@ export interface Hero$update {
     body: Partial<{ name: string; classId: number; active: boolean }>
   }
   response: Hero
+}
+
+export interface Hero$delete {
+  request: { params: { heroId: string } }
+  response: void
 }

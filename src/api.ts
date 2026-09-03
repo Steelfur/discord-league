@@ -32,6 +32,8 @@ import * as updateUserProfile from './handlers/updateUserProfile'
 import * as getHeroes from './handlers/getHeroes'
 import * as createHero from './handlers/createHero'
 import * as updateHero from './handlers/updateHero'
+import * as deleteHero from './handlers/deleteHero'
+import * as classes from './handlers/classes'
 import { authenticate, onlyAdmin, withBearerToken } from './middlewares/authorization'
 import { validate } from './middlewares/validator'
 
@@ -53,6 +55,16 @@ export default (): AsyncRouterInstance => {
   )
 
   api.get('/class', getHeroes.classesHandler)
+  api.post('/class', authenticate, onlyAdmin, validate(classes.createSchema), classes.createHandler)
+  api.patch(
+    '/class/:classId',
+    authenticate,
+    onlyAdmin,
+    validate(classes.updateSchema),
+    classes.updateHandler
+  )
+  api.delete('/class/:classId', authenticate, onlyAdmin, classes.deleteHandler)
+
   api.get('/hero', getHeroes.heroesHandler)
   api.post('/hero', authenticate, onlyAdmin, validate(createHero.schema), createHero.handler)
   api.patch(
@@ -62,6 +74,7 @@ export default (): AsyncRouterInstance => {
     validate(updateHero.schema),
     updateHero.handler
   )
+  api.delete('/hero/:heroId', authenticate, onlyAdmin, deleteHero.handler)
 
   api.get('/user', getAllUsers.handler)
   api.get('/user/current', authenticate, getCurrentUser.handler)

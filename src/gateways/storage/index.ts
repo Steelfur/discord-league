@@ -4,10 +4,16 @@ export {
   ClassRecord,
   HeroRecord,
   fetchClasses,
+  fetchClass,
+  insertClass,
+  updateClass,
+  deleteClass,
+  classHeroCount,
   fetchHeroes,
   fetchHero,
   insertHero,
   updateHero,
+  deleteHero,
 } from './private/hero'
 
 export {
