@@ -7,8 +7,8 @@ import { ValidatedRequest } from '../middlewares/validator'
 
 export const schema = {
   body: Joi.object<Decklist$createForParticipant['request']['body']>({
-    link: Joi.string().required(),
-    decklist: Joi.string().required(),
+    link: Joi.string().trim().uri().required(),
+    decklist: Joi.string().allow('').optional(),
   }),
 }
 
@@ -37,7 +37,7 @@ export async function handler(
     await db.createDecklist({
       participantId,
       locked: false,
-      decklist: req.body.decklist,
+      decklist: req.body.decklist ?? '',
       link: req.body.link,
     })
   } catch (e) {

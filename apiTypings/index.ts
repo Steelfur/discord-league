@@ -230,7 +230,7 @@ export interface Decklist$findAllForTournament {
 export interface Decklist$createForParticipant {
   request: {
     params: { participantId: string }
-    body: { link: string; decklist: string }
+    body: { link: string; decklist?: string }
   }
   response: void
 }
@@ -238,7 +238,7 @@ export interface Decklist$createForParticipant {
 export interface Decklist$updateForParticipant {
   request: {
     params: { participantId: string }
-    body: { link: string; decklist: string }
+    body: { link: string; decklist?: string }
   }
   response: void
 }

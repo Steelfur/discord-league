@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   Button,
   ButtonGroup,
@@ -7,6 +7,7 @@ import {
   Modal,
   TextField,
   Theme,
+  Typography,
 } from '@material-ui/core'
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -22,6 +23,8 @@ const useStyles = makeStyles((theme: Theme) =>
       border: '2px solid #000',
       boxShadow: theme.shadows[5],
       padding: theme.spacing(2, 4, 3),
+      maxWidth: 480,
+      width: '90%',
     },
     buttonGroup: {
       marginTop: theme.spacing(3),
@@ -30,48 +33,44 @@ const useStyles = makeStyles((theme: Theme) =>
 )
 
 export function SubmitDecklistModal({
+  initialLink,
   onCancel,
   onConfirm,
 }: {
+  initialLink?: string
   onCancel: () => void
-  onConfirm: (decklist: { link: string; decklist: string }) => void
+  onConfirm: (decklist: { link: string; decklist?: string }) => void
 }) {
   const classes = useStyles()
-  const [link, setLink] = useState('')
-  const [decklist, setDecklist] = useState('')
+  const [link, setLink] = useState(initialLink ?? '')
+  const trimmed = link.trim()
+  const looksLikeUrl = /^https?:\/\//i.test(trimmed)
   const confirm = useCallback(() => {
-    if (link.length > 0 && decklist.length > 0) {
-      onConfirm({ link, decklist })
-    }
-  }, [onConfirm, link, decklist])
+    if (looksLikeUrl) onConfirm({ link: trimmed })
+  }, [onConfirm, trimmed, looksLikeUrl])
 
   return (
-    <Modal
-      aria-labelledby="start-tournament-modal-title"
-      open
-      onClose={onCancel}
-      className={classes.modal}
-    >
+    <Modal open onClose={onCancel} className={classes.modal}>
       <div className={classes.paper}>
-        <h2 id="start-tournament-modal-title">Decklist submission</h2>
-
+        <h2>Decklist link</h2>
+        <Typography variant="body2" color="textSecondary" gutterBottom>
+          Paste the URL to your decklist (Fabrary, a Google Doc, etc). Your name on the cut chart
+          links to it.
+        </Typography>
         <TextField
           required
           fullWidth
-          label="Link to the decklist"
+          autoFocus
+          label="Decklist URL"
+          placeholder="https://fabrary.net/decks/..."
           margin="normal"
+          value={link}
           onChange={(ev) => setLink(ev.target.value)}
+          error={trimmed.length > 0 && !looksLikeUrl}
+          helperText={
+            trimmed.length > 0 && !looksLikeUrl ? 'Must start with http:// or https://' : ' '
+          }
         />
-        <TextField
-          required
-          fullWidth
-          multiline
-          margin="normal"
-          rows={10}
-          label="Paste the decklist"
-          onChange={(ev) => setDecklist(ev.target.value)}
-        />
-
         <ButtonGroup className={classes.buttonGroup}>
           <Button
             color="inherit"
@@ -81,9 +80,8 @@ export function SubmitDecklistModal({
           >
             Cancel
           </Button>
-
-          <Button color="secondary" variant="contained" onClick={confirm}>
-            Submit
+          <Button color="secondary" variant="contained" onClick={confirm} disabled={!looksLikeUrl}>
+            Save
           </Button>
         </ButtonGroup>
       </div>

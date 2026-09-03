@@ -14,6 +14,7 @@ import {
 
 import { api } from '../api'
 import { UserContext } from '../App'
+import { useHeroLookup } from '../hooks/useReferenceData'
 import { useTournamentDecklists } from '../hooks/useTournamentDecklists'
 import { isAdmin } from '../hooks/useUsers'
 import { SubmitDecklistModal } from '../modals/SubmitDecklistModal'
@@ -38,10 +39,13 @@ const DecklistsTable: React.FC<{
   title: string
   decklists: Decklist[]
   participants: ParticipantWithUserData[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   currentUser: any
   dispatch: React.Dispatch<Action>
-}> = (props) =>
-  props.participants.length === 0 ? null : (
+}> = (props) => {
+  const lookup = useHeroLookup()
+  if (props.participants.length === 0) return null
+  return (
     <div style={{ marginBottom: 10 }}>
       <Typography variant="h4">{props.title}</Typography>
       <TableContainer component={Paper}>
@@ -49,25 +53,32 @@ const DecklistsTable: React.FC<{
           <TableBody>
             {props.participants.map((participant) => {
               const decklist = props.decklists.find((d) => d.participantId === participant.id)
+              const canEdit =
+                isAdmin(props.currentUser) ||
+                (!decklist?.locked && props.currentUser?.discordId === participant.discordId)
               return (
                 <TableRow key={participant.id}>
-                  <TableCell width="60%">
+                  <TableCell width="45%">
                     <UserAvatarAndClan user={participant} />
                   </TableCell>
-                  <TableCell width="20%" align="right">
-                    {decklist && (
-                      <a href={decklist.link} target="_blank" rel="noopener noreferrer">
-                        Decklist
+                  <TableCell width="25%">{lookup.heroName(participant.heroId)}</TableCell>
+                  <TableCell width="15%">
+                    {decklist?.link && (
+                      <a
+                        href={decklist.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={decklist.link}
+                      >
+                        Decklist ↗
                       </a>
                     )}
                   </TableCell>
-                  <TableCell width="20%" align="right">
-                    {(isAdmin(props.currentUser) ||
-                      (!decklist?.locked &&
-                        props.currentUser?.discordId === participant.discordId)) && (
+                  <TableCell width="15%" align="right">
+                    {canEdit && (
                       <Chip
                         clickable
-                        label={decklist ? 'Edit decklist' : 'Submit decklist'}
+                        label={decklist ? 'Edit link' : 'Add link'}
                         variant="outlined"
                         onClick={() =>
                           props.dispatch({
@@ -87,6 +98,7 @@ const DecklistsTable: React.FC<{
       </TableContainer>
     </div>
   )
+}
 
 interface State {
   isModalOpen: boolean
@@ -114,7 +126,7 @@ export const TournamentCupClassification = memo(
     const [state, dispatch] = useReducer(reducer, initialState)
     const [decklistFetching, refreshDecklists] = useTournamentDecklists(props.tournamentId)
     const submit = useCallback(
-      async (decklist: { link: string; decklist: string }) => {
+      async (decklist: { link: string; decklist?: string }) => {
         if (state.participantId != null && state.change != null) {
           const params = { participantId: state.participantId, body: decklist }
           if (state.change === 'create') {
@@ -154,6 +166,9 @@ export const TournamentCupClassification = memo(
         />
         {state.isModalOpen && (
           <SubmitDecklistModal
+            initialLink={
+              decklistFetching.data.find((d) => d.participantId === state.participantId)?.link
+            }
             onCancel={() => dispatch({ type: 'closeModal' })}
             onConfirm={submit}
           />

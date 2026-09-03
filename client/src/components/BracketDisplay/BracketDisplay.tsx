@@ -3,6 +3,8 @@ import { Typography } from '@material-ui/core'
 import { FC, useMemo, useState } from 'react'
 
 import { api } from '../../api'
+import { useHeroLookup } from '../../hooks/useReferenceData'
+import { classColor } from '../../utils/heroUtils'
 
 type CanReport = (m: BracketMatch) => boolean
 
@@ -24,6 +26,7 @@ const MatchCard: FC<{
   onReported: () => void
 }> = ({ match, participants, canReport, isAdmin, onReported }) => {
   const [busy, setBusy] = useState(false)
+  const lookup = useHeroLookup()
   const bothPresent = match.participantAId != null && match.participantBId != null
   const reportable = canReport(match) && bothPresent
 
@@ -56,10 +59,14 @@ const MatchCard: FC<{
   const row = (id: number | null, seed: number | null, first: boolean) => {
     const isWinner = id != null && id === match.winnerId
     const clickable = reportable && !busy && id != null
+    const participant = id != null ? participants.find((p) => p.id === id) : undefined
+    const heroId = participant?.heroId
+    const heroName = lookup.heroName(heroId)
+    const className = lookup.className(heroId)
     return (
       <div
         onClick={clickable ? () => report(id as number) : undefined}
-        title={clickable ? 'Click to set as winner' : undefined}
+        title={clickable ? 'Click to set as winner' : heroName || undefined}
         style={{
           padding: '4px 8px',
           fontWeight: isWinner ? 700 : 400,
@@ -68,7 +75,22 @@ const MatchCard: FC<{
           borderBottom: first ? '1px solid rgba(0,0,0,0.12)' : undefined,
         }}
       >
-        {nameOf(participants, id, seed)}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span
+            style={{
+              width: 9,
+              height: 9,
+              borderRadius: '50%',
+              flexShrink: 0,
+              background: classColor(className),
+              visibility: heroId ? 'visible' : 'hidden',
+            }}
+          />
+          <span>{nameOf(participants, id, seed)}</span>
+        </div>
+        {heroName && (
+          <div style={{ fontSize: 11, color: '#666', marginLeft: 15 }}>{heroName}</div>
+        )}
       </div>
     )
   }
