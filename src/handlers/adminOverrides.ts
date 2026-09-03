@@ -94,6 +94,12 @@ export async function reseedBracketHandler(
     matchRecords.flatMap((m) => [m.playerAId, m.playerBId])
   )
   const tournament = toTournament(tournamentRecord, podRecords, matchRecords, participantRecords)
-  await processBrackets(id, tournament.toPodResults())
+  const cutSize = await processBrackets(id, tournament.toPodResults())
+  if (cutSize < 2) {
+    res
+      .status(409)
+      .send(`Only ${cutSize} player(s) have a winning record — not enough to seed a bracket.`)
+    return
+  }
   res.sendStatus(200)
 }

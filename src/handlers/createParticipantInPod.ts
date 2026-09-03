@@ -42,7 +42,7 @@ export async function handler(
   })
 
   const matches = await db.fetchMatchesForMultiplePods([pod.id])
-  const deadline = matches ? matches[0].deadline : undefined
+  const deadline = matches[0]?.deadline
   const participants = await db.fetchMultipleParticipantsWithUserData(
     matches.flatMap((match) => [match.playerAId, match.playerBId])
   )
