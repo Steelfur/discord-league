@@ -51,6 +51,16 @@ export async function handler(
     return
   }
 
+  // Players can only report during the group stage. Admins can always fix a result.
+  if (!userIsAdmin(req)) {
+    const tournamentId = participants[0]?.tournamentId
+    const tournament = tournamentId != null ? await db.getTournament(tournamentId) : undefined
+    if (tournament && tournament.statusId !== 'group') {
+      res.sendStatus(409)
+      return
+    }
+  }
+
   const { winnerId } = req.body
   if (winnerId != null && winnerId !== match.playerAId && winnerId !== match.playerBId) {
     res.status(400).send()

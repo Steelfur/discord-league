@@ -33,6 +33,15 @@ export async function handler(
     return
   }
 
+  // Once the bracket has started decklists are frozen for players; admins can still edit.
+  if (req.user?.flags !== 1) {
+    const tournament = await db.getTournament(participant.tournamentId)
+    if (tournament && (tournament.statusId === 'bracket' || tournament.statusId === 'finished')) {
+      res.sendStatus(409)
+      return
+    }
+  }
+
   try {
     await db.createDecklist({
       participantId,

@@ -42,6 +42,16 @@ export async function handler(
     return
   }
 
+  // Belt-and-braces: block player edits once the bracket has started, even if the
+  // per-decklist lock flag was never set.
+  if (req.user?.flags !== 1) {
+    const tournament = await db.getTournament(participant.tournamentId)
+    if (tournament && (tournament.statusId === 'bracket' || tournament.statusId === 'finished')) {
+      res.sendStatus(409)
+      return
+    }
+  }
+
   const updatedRows = await db.updateDecklist(participant.id, req.body)
 
   if (updatedRows < 1) {
