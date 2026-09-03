@@ -15,11 +15,13 @@ trash
 \.vs/
 
 dist
+client/build
 
 .eslintcache
 
 # CI
 /*.log
+*.log
 
 # CLI's
 .cli.lock

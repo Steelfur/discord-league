@@ -1,13 +1,13 @@
 import { FC } from 'react'
 
-import { ReactComponent as NeutralMon } from '../../assets/mons/neu_icon.svg'
-import { ReactComponent as CrabMon } from '../../assets/mons/crb_icon.svg'
-import { ReactComponent as CraneMon } from '../../assets/mons/crn_icon.svg'
-import { ReactComponent as DragonMon } from '../../assets/mons/drg_icon.svg'
-import { ReactComponent as LionMon } from '../../assets/mons/lio_icon.svg'
-import { ReactComponent as PhoenixMon } from '../../assets/mons/phx_icon.svg'
-import { ReactComponent as ScorpionMon } from '../../assets/mons/scp_icon.svg'
-import { ReactComponent as UnicornMon } from '../../assets/mons/uni_icon.svg'
+import NeutralMon from '../../assets/mons/neu_icon.svg?react'
+import CrabMon from '../../assets/mons/crb_icon.svg?react'
+import CraneMon from '../../assets/mons/crn_icon.svg?react'
+import DragonMon from '../../assets/mons/drg_icon.svg?react'
+import LionMon from '../../assets/mons/lio_icon.svg?react'
+import PhoenixMon from '../../assets/mons/phx_icon.svg?react'
+import ScorpionMon from '../../assets/mons/scp_icon.svg?react'
+import UnicornMon from '../../assets/mons/uni_icon.svg?react'
 
 import styles from './styles.module.scss'
 
