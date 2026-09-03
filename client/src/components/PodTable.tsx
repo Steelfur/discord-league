@@ -90,10 +90,10 @@ function reducer(state: State, action: any) {
 
 const useCreateParticipantInPod = (podId: number, dispatch: Dispatch<any>) =>
   useCallback(
-    (userId: string, heroId: number, timezoneId: number, timezonePreferenceId: string) => {
+    (userId: string, heroId: number) => {
       api.Pod.createParticipant({
         podId,
-        body: { userId, heroId, timezoneId, timezonePreferenceId },
+        body: { userId, heroId },
       })
         .then(() =>
           dispatch({

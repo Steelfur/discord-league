@@ -8,13 +8,9 @@ export const schema = {
   body: Joi.object<{
     userId: string
     heroId: number
-    timezoneId: number
-    timezonePreferenceId: 'similar' | 'neutral' | 'dissimilar'
   }>({
     userId: Joi.string().required(),
     heroId: Joi.number().integer().min(1).required(),
-    timezoneId: Joi.number().integer().min(1).required(),
-    timezonePreferenceId: Joi.string().valid('similar', 'neutral', 'dissimilar').required(),
   }),
 }
 
@@ -42,8 +38,6 @@ export async function handler(
   const newParticipant = await db.insertParticipant({
     tournamentId: pod.tournamentId,
     heroId: req.body.heroId,
-    timezoneId: req.body.timezoneId,
-    timezonePreferenceId: req.body.timezonePreferenceId,
     userId: req.body.userId,
   })
 

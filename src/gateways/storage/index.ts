@@ -62,6 +62,7 @@ export {
 export {
   TournamentPodRecord,
   createTournamentPod,
+  updatePod,
   fetchPod,
   fetchTournamentPods,
 } from './private/pod'

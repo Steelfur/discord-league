@@ -6,7 +6,6 @@ export interface TournamentPodRecord {
   id: number
   name: string
   tournamentId: number
-  timezoneId: number
 }
 
 export async function createTournamentPod(
@@ -15,6 +14,14 @@ export async function createTournamentPod(
   return pg(TABLE)
     .insert(tournamentPod, '*')
     .then(([row]) => row)
+}
+
+export async function updatePod(
+  podId: number,
+  update: Partial<Pick<TournamentPodRecord, 'name'>>
+): Promise<TournamentPodRecord> {
+  const [row] = await pg(TABLE).where('id', podId).update(update, '*')
+  return row
 }
 
 export async function fetchTournamentPods(tournamentId: number): Promise<TournamentPodRecord[]> {

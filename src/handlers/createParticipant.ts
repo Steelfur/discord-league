@@ -8,13 +8,9 @@ export const schema = {
   body: Joi.object<{
     userId: string
     heroId: number
-    timezoneId: number
-    timezonePreferenceId: 'similar' | 'neutral' | 'dissimilar'
   }>({
     userId: Joi.string().required(),
     heroId: Joi.number().integer().min(1).required(),
-    timezoneId: Joi.number().integer().min(1).required(),
-    timezonePreferenceId: Joi.string().valid('similar', 'neutral', 'dissimilar').required(),
   }),
 }
 
@@ -37,8 +33,6 @@ export async function handler(
     userId: req.body.userId,
     tournamentId: tournamentId,
     heroId: req.body.heroId,
-    timezoneId: req.body.timezoneId,
-    timezonePreferenceId: req.body.timezonePreferenceId,
   })
   const participantWithUserData = await db.fetchParticipantWithUserData(participant.id)
   res.status(201).send(participantWithUserData)

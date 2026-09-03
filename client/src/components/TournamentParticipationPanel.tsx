@@ -80,10 +80,10 @@ const useCreateParticipant = (
   participants: any[]
 ) =>
   useCallback(
-    (userId: string, heroId: number, timezoneId: number, timezonePreferenceId: string) => {
+    (userId: string, heroId: number) => {
       api.Tournament.createParticipant({
         tournamentId,
-        body: { userId, heroId, timezoneId, timezonePreferenceId },
+        body: { userId, heroId },
       })
         .then((resp) => {
           dispatch({

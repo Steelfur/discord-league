@@ -9,14 +9,10 @@ export const schema = {
     id: number
     userId: string
     heroId: number
-    timezoneId: number
-    timezonePreferenceId: 'similar' | 'neutral' | 'dissimilar'
   }>({
     id: Joi.number().required(),
     userId: Joi.string().required(),
     heroId: Joi.number().integer().min(1).required(),
-    timezoneId: Joi.number().integer().min(1).required(),
-    timezonePreferenceId: Joi.string().valid('similar', 'neutral', 'dissimilar').required(),
   }),
 }
 

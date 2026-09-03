@@ -4,7 +4,7 @@ import Joi from 'joi'
 
 import * as db from '../gateways/storage'
 import { ValidatedRequest } from '../middlewares/validator'
-import { groupParticipantsInPods, matchesForPod, namePods } from '../pods'
+import { createPodsForParticipants } from '../pods'
 
 export const schema = {
   body: Joi.object<WithParsedDates<API['request']['body'], 'deadline'>>({
@@ -34,35 +34,7 @@ export async function handler(
   await db.updateTournament(tournament.id, { statusId: 'group' })
 
   const participants = await db.fetchParticipants(tournamentId)
-
-  const pods = groupParticipantsInPods(tournament.typeId === 'pod6' ? '67' : '78', participants)
-  const namedPods = namePods(pods)
-
-  await Promise.all(
-    namedPods.map((pod) =>
-      db
-        .createTournamentPod({ tournamentId, name: pod.name, timezoneId: pod.timezones[0] })
-        .then((createdPod) =>
-          Promise.all(
-            matchesForPod(pod).map(
-              ([
-                { id: playerAId, heroId: playerAHeroId },
-                { id: playerBId, heroId: playerBHeroId },
-              ]) =>
-                db
-                  .insertMatch({
-                    playerAId,
-                    playerAHeroId,
-                    playerBId,
-                    playerBHeroId,
-                    deadline: req.body.deadline,
-                  })
-                  .then((match) => db.connectMatchToPod(match.id, createdPod.id))
-            )
-          ).then(() => createdPod)
-        )
-    )
-  )
+  await createPodsForParticipants(tournamentId, tournament.typeId, req.body.deadline, participants)
 
   res.sendStatus(201)
 }

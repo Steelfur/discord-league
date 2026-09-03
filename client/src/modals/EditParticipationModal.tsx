@@ -5,7 +5,6 @@ import {
   ButtonGroup,
   createStyles,
   Grid,
-  InputLabel,
   makeStyles,
   MenuItem,
   Modal,
@@ -17,7 +16,6 @@ import { UserContext } from '../App'
 import { HeroSelect } from '../components/HeroSelect'
 import { UserAvatar } from '../components/UserAvatar/UserAvatar'
 import { isAdmin } from '../hooks/useUsers'
-import { timezones, timezonePreferences } from '../utils/timezoneUtils'
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -44,37 +42,19 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 )
 
-interface State {
+export interface ParticipationState {
   userId: string
   heroId: number
-  timezoneId: number
-  timezonePreferenceId: string
   participationId?: number
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function reducer(state: State, action: any): State {
+function reducer(state: ParticipationState, action: any): ParticipationState {
   switch (action.type) {
-    case 'CHANGE_CLAN':
-      return {
-        ...state,
-        heroId: action.payload,
-      }
+    case 'CHANGE_HERO':
+      return { ...state, heroId: action.payload }
     case 'CHANGE_USER':
-      return {
-        ...state,
-        userId: action.payload,
-      }
-    case 'CHANGE_TIMEZONE':
-      return {
-        ...state,
-        timezoneId: action.payload,
-      }
-    case 'CHANGE_TIMEZONE_PREFERENCE':
-      return {
-        ...state,
-        timezonePreferenceId: action.payload,
-      }
+      return { ...state, userId: action.payload }
     default:
       throw new Error()
   }
@@ -83,24 +63,16 @@ function reducer(state: State, action: any): State {
 export function EditParticipationModal(props: {
   modalOpen: boolean
   onClose: () => void
-  onSubmit: (
-    userId: string,
-    heroId: number,
-    timezoneId: number,
-    timezonePreferenceId: string,
-    participationId?: number
-  ) => void
+  onSubmit: (userId: string, heroId: number, participationId?: number) => void
   title: string
   users: UserRowData[]
-  initialState?: State
+  initialState?: ParticipationState
 }) {
   const user = useContext(UserContext)
   const classes = useStyles()
-  const initialState: State = props.initialState || {
+  const initialState: ParticipationState = props.initialState || {
     userId: user?.discordId || '',
     heroId: user?.preferredHeroId || 1,
-    timezoneId: 1,
-    timezonePreferenceId: 'similar',
     participationId: undefined,
   }
   const [state, dispatch] = useReducer(reducer, initialState)
@@ -108,7 +80,6 @@ export function EditParticipationModal(props: {
   return user ? (
     <Modal
       aria-labelledby="edit-participation-modal-title"
-      aria-describedby="edit-participation-modal-description"
       open={props.modalOpen}
       onClose={props.onClose}
       className={classes.modal}
@@ -124,19 +95,17 @@ export function EditParticipationModal(props: {
                 value={state.userId}
                 className={classes.inputField}
                 onChange={(event) =>
-                  dispatch({
-                    type: 'CHANGE_USER',
-                    payload: event.target.value as string | undefined,
-                  })
+                  dispatch({ type: 'CHANGE_USER', payload: event.target.value as string })
                 }
               >
                 {props.users
+                  .slice()
                   .sort((a, b) => a.discordName.localeCompare(b.discordName))
-                  .map((user: UserRowData) => (
-                    <MenuItem value={user.userId} key={user.userId}>
+                  .map((u: UserRowData) => (
+                    <MenuItem value={u.userId} key={u.userId}>
                       <UserAvatar
-                        displayAvatarURL={user.displayAvatarURL}
-                        userName={user.discordName}
+                        displayAvatarURL={u.displayAvatarURL}
+                        userName={u.discordName}
                         small
                       />
                     </MenuItem>
@@ -150,73 +119,21 @@ export function EditParticipationModal(props: {
             <HeroSelect
               heroId={state.heroId}
               label="Hero"
-              onChange={(heroId) => dispatch({ type: 'CHANGE_CLAN', payload: heroId })}
+              onChange={(heroId) => dispatch({ type: 'CHANGE_HERO', payload: heroId })}
             />
-          </Grid>
-          <Grid item>
-            <InputLabel id="timezoneId">Timezone</InputLabel>
-            <Select
-              id="timezoneId"
-              value={state.timezoneId}
-              className={classes.inputField}
-              onChange={(event) =>
-                dispatch({
-                  type: 'CHANGE_TIMEZONE',
-                  payload: event.target.value as number | undefined,
-                })
-              }
-            >
-              {timezones.map((timezone) => (
-                <MenuItem value={timezone.id} key={timezone.id}>
-                  {timezone.timezone}
-                </MenuItem>
-              ))}
-            </Select>
-          </Grid>
-          <Grid item>
-            <InputLabel id="timezonePreferenceId">Similar Timezone?</InputLabel>
-            <Select
-              id="timezonePreferenceId"
-              value={state.timezonePreferenceId}
-              className={classes.inputField}
-              onChange={(event) =>
-                dispatch({
-                  type: 'CHANGE_TIMEZONE_PREFERENCE',
-                  payload: event.target.value as string | undefined,
-                })
-              }
-            >
-              {timezonePreferences.map((preference) => (
-                <MenuItem value={preference.id} key={preference.id}>
-                  {preference.name}
-                </MenuItem>
-              ))}
-            </Select>
           </Grid>
         </Grid>
         <br />
         <br />
         <ButtonGroup className={classes.buttonGroup}>
-          <Button
-            color="inherit"
-            variant="contained"
-            onClick={() => {
-              props.onClose()
-            }}
-          >
+          <Button color="inherit" variant="contained" onClick={props.onClose}>
             Cancel
           </Button>
           <Button
             color="primary"
             variant="contained"
             onClick={() =>
-              props.onSubmit(
-                state.userId || user.discordId,
-                state.heroId,
-                state.timezoneId,
-                state.timezonePreferenceId,
-                state.participationId
-              )
+              props.onSubmit(state.userId || user.discordId, state.heroId, state.participationId)
             }
           >
             {props.title}

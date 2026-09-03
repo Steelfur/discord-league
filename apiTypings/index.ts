@@ -66,9 +66,7 @@ export interface Participant {
   discordAvatar: string
   discordId: string
   discordName: string
-  timezoneId: number
   bracket: 'silverCup' | 'goldCup' | null
-  timezonePreferenceId: 'similar' | 'neutral' | 'dissimilar'
   wins: number
   losses: number
   position: number
@@ -78,8 +76,6 @@ export interface ParticipantWithUserData {
   id: number
   userId: string
   heroId: number
-  timezoneId: number
-  timezonePreferenceId: 'similar' | 'neutral' | 'dissimilar'
   discordAvatar: string
   discordId: string
   discordName: string
@@ -134,8 +130,6 @@ export interface RankedParticipant {
   id: number
   losses: number
   position: number
-  timezoneId: number
-  timezonePreferenceId: 'similar' | 'neutral' | 'dissimilar'
   userId: string
   wins: number
 }
@@ -144,8 +138,6 @@ export interface PodResult {
   id: number
   name: string
   tournamentId: number
-  timezoneId: number
-
   matches: MatchData[]
   participants: RankedParticipant[]
 }

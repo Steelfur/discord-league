@@ -8,11 +8,6 @@ export function player(opts?: Partial<Player>): fc.Arbitrary<Player> {
     userId: opts?.userId != null ? fc.constant(opts.userId) : fc.string(16, 32),
     heroId: opts?.heroId != null ? fc.constant(opts.heroId) : fc.integer(1, 7),
     tournamentId: opts?.tournamentId != null ? fc.constant(opts.tournamentId) : fc.nat(),
-    timezoneId: opts?.timezoneId != null ? fc.constant(opts.timezoneId) : fc.integer(1, 7),
-    timezonePreferenceId:
-      opts?.timezonePreferenceId != null
-        ? fc.constant(opts.timezonePreferenceId)
-        : fc.constantFrom('similar', 'neutral', 'dissimilar'),
     dropped: opts?.dropped != null ? fc.constant(opts.dropped) : fc.boolean(),
     bracket: opts?.bracket != null ? fc.constant(opts.bracket) : fc.constant(null),
   })

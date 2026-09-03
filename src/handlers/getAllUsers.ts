@@ -21,7 +21,10 @@ export async function handler(
   const heroNameById = new Map(heroes.map((h) => [h.id, h.name]))
 
   const preparedUsers = users.map((user) => ({
-    discordName: `${user.discordName}#${user.discordDiscriminator}`,
+    discordName:
+      user.discordDiscriminator && user.discordDiscriminator !== '0'
+        ? `${user.discordName}#${user.discordDiscriminator}`
+        : user.discordName,
     displayAvatarURL: displayAvatarURL(user.discordId, user.discordAvatar),
     gemId: user.gemId ?? NOT_SPECIFIED,
     preferredHero:

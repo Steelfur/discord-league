@@ -5,7 +5,6 @@ import React, { useCallback, useReducer } from 'react'
 
 import { api } from '../api'
 import { EditParticipationModal } from '../modals/EditParticipationModal'
-import { getTimezoneForId, getTimezonePreferenceForId } from '../utils/timezoneUtils'
 import { HeroTag } from './HeroTag'
 import { DeletionDialog } from './DeletionDialog'
 import { MessageSnackBar } from './MessageSnackBar'
@@ -22,8 +21,6 @@ interface State {
     participationId: number
     userId: string
     heroId: number
-    timezoneId: number
-    timezonePreferenceId: string
   }
 }
 
@@ -46,8 +43,6 @@ function reducer(state: State, action: any) {
           participationId: participation.id,
           userId: participation.userId,
           heroId: participation.heroId,
-          timezoneId: participation.timezoneId,
-          timezonePreferenceId: participation.timezonePreferenceId,
         },
       }
     }
@@ -106,26 +101,14 @@ const useUpdateParticipant = (
   onUpdate: () => void
 ) =>
   useCallback(
-    (
-      userId: string,
-      heroId: number,
-      timezoneId: number,
-      timezonePreferenceId: string,
-      participantId?: number
-    ) => {
+    (userId: string, heroId: number, participantId?: number) => {
       if (participantId == null) {
         return
       }
       api.Tournament.updateParticipant({
         tournamentId,
         participantId,
-        body: {
-          userId,
-          heroId,
-          timezoneId,
-          timezonePreferenceId,
-          id: participantId,
-        },
+        body: { userId, heroId, id: participantId },
       })
         .then(() => {
           dispatch({ type: 'SUCCESS', payload: 'The participation was updated successfully!' })
@@ -160,8 +143,6 @@ export function ParticipationTable(props: {
       participationId: 0,
       userId: '',
       heroId: 1,
-      timezoneId: 0,
-      timezonePreferenceId: 'similar',
     },
   }
   const [state, dispatch] = useReducer(reducer, initialState)
@@ -190,20 +171,8 @@ export function ParticipationTable(props: {
           {
             field: 'heroId',
             title: 'Hero',
-            render: (rowData: RankedParticipant) => <HeroTag heroId={rowData.heroId} small showClass />,
-          },
-          {
-            field: 'timezoneId',
-            title: 'Timezone',
             render: (rowData: RankedParticipant) => (
-              <Typography>{getTimezoneForId(rowData.timezoneId)}</Typography>
-            ),
-          },
-          {
-            field: 'timezonePreferenceId',
-            title: 'Similar Timezone?',
-            render: (rowData: RankedParticipant) => (
-              <Typography>{getTimezonePreferenceForId(rowData.timezonePreferenceId)}</Typography>
+              <HeroTag heroId={rowData.heroId} small showClass />
             ),
           },
         ]}

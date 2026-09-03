@@ -1,143 +1,28 @@
+import Chance from 'chance'
+
 import { Player, Pod } from './types'
-import * as A from 'fp-ts/lib/Array'
-import * as O from 'fp-ts/lib/Option'
-import { contramap, ordNumber } from 'fp-ts/lib/Ord'
-import { pipe } from 'fp-ts/lib/function'
-import {
-  Bucket,
-  Bucket67,
-  Bucket78,
-  byClanPopularityASC,
-  byPlayerCountASC,
-  byPlayerToCompatibleDESC,
-  byTimezoneProximity,
-  byTimezonesCountASC,
-  concat,
-  nextCompatibleSize,
-  nonSequentialCompatibleSizes,
-} from './bucket'
 
-const byClan = contramap<number, Player>((player) => player.heroId)(ordNumber)
+const chance = new Chance()
 
-const separateSimilarFromFluid = A.partition<Player>(
-  (player) => player.timezonePreferenceId === 'similar'
-)
+/**
+ * Split participants into pods of roughly `targetSize`, completely at random.
+ * Pod sizes differ by at most one.
+ */
+export function groupParticipantsInPods(targetSize: number, participants: Player[]): Pod[] {
+  const shuffled = chance.shuffle(participants.slice())
+  const total = shuffled.length
+  if (total === 0) return []
 
-const playersToBucketList = (
-  BucketClass: typeof Bucket,
-  players: Player[],
-  bucketMergeCount: number
-): Bucket[] => {
-  let buckets = players
-    .reduce<Bucket[]>((acc, player) => {
-      const bucket = acc[player.timezoneId]
-      if (bucket) {
-        bucket.addPlayer(player)
-        return acc
-      } else {
-        acc[player.timezoneId] = new BucketClass([player.timezoneId], [player])
-        return acc
-      }
-    }, [])
-    .filter((a) => a.players.length > 0)
+  const podCount = Math.max(1, Math.round(total / targetSize))
+  const base = Math.floor(total / podCount)
+  const remainder = total % podCount
 
-  for (let i = 0; i < bucketMergeCount; i++) {
-    const [smallBucket, ...otherBuckets] = A.sortBy([byTimezonesCountASC, byPlayerCountASC])(
-      buckets
-    )
-    const [receiverBucket, ...restOfBuckets] = A.sortBy([
-      byTimezoneProximity(smallBucket.tzs[0]),
-      byPlayerCountASC,
-    ])(otherBuckets)
-    if (!receiverBucket) {
-      throw Error('the bucketMergeCount is too big')
-    }
-    const mergedBucket = concat(smallBucket, receiverBucket)
-
-    buckets = [mergedBucket, ...restOfBuckets]
+  const pods: Pod[] = []
+  let cursor = 0
+  for (let i = 0; i < podCount; i++) {
+    const podSize = base + (i < remainder ? 1 : 0)
+    pods.push({ players: shuffled.slice(cursor, cursor + podSize) })
+    cursor += podSize
   }
-
-  return buckets
-}
-
-const toBuckets = (
-  BucketClass: typeof Bucket,
-  fluid: Player[],
-  similar: Player[],
-  bucketsMerged = 0
-): Bucket[] => {
-  const buckets = playersToBucketList(BucketClass, similar, bucketsMerged)
-  fluid.forEach((playerToAssign) => {
-    pipe(
-      buckets,
-      A.sortBy([byPlayerToCompatibleDESC, byClanPopularityASC(playerToAssign.heroId)]),
-      A.head,
-      O.map((targetBucket) => targetBucket.addPlayer(playerToAssign))
-    )
-  })
-
-  if (buckets.every((b) => b.isCompatibleSize)) {
-    return buckets
-  }
-
-  return toBuckets(BucketClass, fluid, similar, bucketsMerged + 1)
-}
-
-const createEmptyPods = (timezones: number[], players: Player[]) =>
-  A.makeBy(Math.floor(players.length / 6), () => ({ timezones, players: [] }))
-
-const distributeClansInPods = (idx: number, pods: Pod[], part: Player) => {
-  pods[idx % pods.length].players.push(part)
   return pods
-}
-
-const spreadInPods = A.chain<Bucket, Pod>((bucket) => {
-  const sorted = A.sort(byClan)(bucket.players)
-  return A.reduceWithIndex(createEmptyPods(bucket.tzs, sorted), distributeClansInPods)(sorted)
-})
-
-const singlePod = (players: Player[]): Pod => ({
-  timezones: Array.from(new Set(players.map((p) => p.timezoneId))),
-  players,
-})
-
-export function groupParticipantsInPods(bucketType: '67' | '78', players: Player[]): Pod[] {
-  const BucketToUse = bucketType === '67' ? Bucket67 : Bucket78
-  if (BucketToUse.minimumPlayerCount > players.length) {
-    return Array.of(singlePod(players))
-  }
-
-  const targetPlayerCount = nextCompatibleSize(
-    bucketType === '67'
-      ? nonSequentialCompatibleSizes.Bucket67
-      : nonSequentialCompatibleSizes.Bucket78,
-    players.length
-  )
-  const ghostsToAdd = Math.max(0, targetPlayerCount - players.length)
-  const ghostId = new Set<number>()
-
-  for (let i = 0; i < ghostsToAdd; i++) {
-    const id = 100000 + i
-    ghostId.add(id)
-    players.push({
-      id,
-      userId: 'ghost',
-      heroId: 0,
-      tournamentId: 0,
-      timezoneId: 0,
-      timezonePreferenceId: 'neutral',
-      dropped: false,
-      bracket: null,
-    })
-  }
-
-  const { left: fluid, right: similar } = separateSimilarFromFluid(players)
-
-  const buckets = toBuckets(BucketToUse, fluid, similar)
-  const pods = spreadInPods(buckets)
-
-  return pods.map((pod) => ({
-    ...pod,
-    players: pod.players.filter((p) => !ghostId.has(p.id)),
-  }))
 }

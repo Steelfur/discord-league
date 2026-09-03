@@ -24,8 +24,6 @@ export type ExtendedParticipant = Pick<
   | 'discordName'
   | 'discordTag'
   | 'bracket'
-  | 'timezoneId'
-  | 'timezonePreferenceId'
 > &
   Pick<PlayerRecord, 'wins' | 'losses'>
 
@@ -40,5 +38,4 @@ export interface PodData {
   id: number
   name: string
   tournamentId: number
-  timezoneId: number
 }

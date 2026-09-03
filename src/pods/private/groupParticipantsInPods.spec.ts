@@ -1,81 +1,41 @@
-import { fc, testProp } from 'ava-fast-check'
-
-import { ParticipantRecord } from '../../gateways/storage'
+import test from 'ava'
 
 import { groupParticipantsInPods } from './groupParticipantsInPods'
-import * as arbitrary from './__test_helpers'
+import { Player } from './types'
 
-testProp(
-  'Puts all players in a single pod for playcounts lower than a pod size',
-  [fc.array(arbitrary.player(), 1, 5)],
-  (participants: ParticipantRecord[]) => {
-    const inputParticipants = new Set(participants)
-    const outputParticipants = new Set(
-      groupParticipantsInPods('67', participants).flatMap((pod) => pod.players)
-    )
+function players(n: number): Player[] {
+  return Array.from({ length: n }, (_, i) => ({
+    id: i + 1,
+    userId: `u${i + 1}`,
+    heroId: 1,
+    tournamentId: 1,
+    dropped: false,
+    bracket: null,
+  }))
+}
 
-    if (inputParticipants.size !== outputParticipants.size) {
-      return false
-    }
+for (const [n, size] of [
+  [1, 6],
+  [5, 6],
+  [6, 6],
+  [7, 6],
+  [13, 6],
+  [24, 8],
+  [30, 8],
+] as const) {
+  test(`groupParticipantsInPods(${size}, ${n}): places everyone, pods within 1 of each other`, (t) => {
+    const pods = groupParticipantsInPods(size, players(n))
 
-    for (const participant of inputParticipants) {
-      if (!outputParticipants.has(participant)) {
-        return false
-      }
-    }
+    const placed = pods.flatMap((p) => p.players.map((pl) => pl.id))
+    t.is(placed.length, n, 'every participant placed exactly once')
+    t.is(new Set(placed).size, n, 'no participant placed twice')
 
-    return true
-  }
-)
+    const sizes = pods.map((p) => p.players.length)
+    t.true(Math.max(...sizes) - Math.min(...sizes) <= 1, `pod sizes ${sizes} differ by > 1`)
+    t.true(pods.length >= 1)
+  })
+}
 
-testProp(
-  'distributes all participants',
-  [fc.array(arbitrary.player(), 1, 400)],
-  (participants: ParticipantRecord[]) => {
-    const inputParticipants = new Set(participants)
-    const outputParticipants = new Set(
-      groupParticipantsInPods('67', participants).flatMap((pod) => pod.players)
-    )
-
-    if (inputParticipants.size !== outputParticipants.size) {
-      return false
-    }
-
-    for (const participant of inputParticipants) {
-      if (!outputParticipants.has(participant)) {
-        return false
-      }
-    }
-
-    return true
-  }
-)
-
-testProp(
-  'pods prefer to be 6-sized than 7-sized',
-  [fc.array(arbitrary.player(), 6 * 7, 6 * 7)],
-  (participants) =>
-    groupParticipantsInPods('67', participants).every((ps) => ps.players.length === 6)
-)
-
-testProp(
-  'all pods have a maximum of 7 participants',
-  [fc.array(arbitrary.player(), 30, 400)],
-  (participants) =>
-    groupParticipantsInPods('67', participants).every((ps) => ps.players.length <= 7)
-)
-
-testProp(
-  'all participants with similar timezone preferences stay in their timezones',
-  [
-    fc.array(arbitrary.player(), 30, 400),
-    fc.array(arbitrary.player({ timezonePreferenceId: 'similar' }), 1, 20),
-  ],
-  (randomParticipants, similarParticipants) =>
-    groupParticipantsInPods('67', [...randomParticipants, ...similarParticipants]).every((pod) =>
-      pod.players.every(
-        (player) =>
-          player.timezonePreferenceId !== 'similar' || pod.timezones.includes(player.timezoneId)
-      )
-    )
-)
+test('groupParticipantsInPods: no participants -> no pods', (t) => {
+  t.deepEqual(groupParticipantsInPods(6, []), [])
+})
