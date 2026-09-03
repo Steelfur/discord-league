@@ -5,9 +5,8 @@ import React, { useCallback, useReducer } from 'react'
 
 import { api } from '../api'
 import { EditParticipationModal } from '../modals/EditParticipationModal'
-import { getClanForId } from '../utils/clanUtils'
 import { getTimezoneForId, getTimezonePreferenceForId } from '../utils/timezoneUtils'
-import { ClanMon } from './ClanMon/ClanMon'
+import { HeroTag } from './HeroTag'
 import { DeletionDialog } from './DeletionDialog'
 import { MessageSnackBar } from './MessageSnackBar'
 import { UserAvatar } from './UserAvatar/UserAvatar'
@@ -22,7 +21,7 @@ interface State {
   initialEditState: {
     participationId: number
     userId: string
-    clanId: number
+    heroId: number
     timezoneId: number
     timezonePreferenceId: string
   }
@@ -46,7 +45,7 @@ function reducer(state: State, action: any) {
         initialEditState: {
           participationId: participation.id,
           userId: participation.userId,
-          clanId: participation.clanId,
+          heroId: participation.heroId,
           timezoneId: participation.timezoneId,
           timezonePreferenceId: participation.timezonePreferenceId,
         },
@@ -109,7 +108,7 @@ const useUpdateParticipant = (
   useCallback(
     (
       userId: string,
-      clanId: number,
+      heroId: number,
       timezoneId: number,
       timezonePreferenceId: string,
       participantId?: number
@@ -122,7 +121,7 @@ const useUpdateParticipant = (
         participantId,
         body: {
           userId,
-          clanId,
+          heroId,
           timezoneId,
           timezonePreferenceId,
           id: participantId,
@@ -160,7 +159,7 @@ export function ParticipationTable(props: {
     initialEditState: {
       participationId: 0,
       userId: '',
-      clanId: 1,
+      heroId: 1,
       timezoneId: 0,
       timezonePreferenceId: 'similar',
     },
@@ -189,13 +188,9 @@ export function ParticipationTable(props: {
             render: (rowData: RankedParticipant) => <Typography>{rowData.discordTag}</Typography>,
           },
           {
-            field: 'clanId',
-            title: 'Clan',
-            render: (rowData: RankedParticipant) => (
-              <div>
-                <ClanMon clanId={rowData.clanId} small /> {getClanForId(rowData.clanId)}
-              </div>
-            ),
+            field: 'heroId',
+            title: 'Hero',
+            render: (rowData: RankedParticipant) => <HeroTag heroId={rowData.heroId} small showClass />,
           },
           {
             field: 'timezoneId',

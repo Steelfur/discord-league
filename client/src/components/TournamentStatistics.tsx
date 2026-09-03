@@ -5,15 +5,13 @@ import { useTournamentStatistics } from '../hooks/useTournamentStatistics'
 import { Loading } from './Loading'
 import { RequestError } from './RequestError'
 import { EmptyState } from './EmptyState'
-import { ClanMon } from './ClanMon/ClanMon'
+import { ClassBadge } from './HeroTag'
 
-function Row(props: { clanId: number; kamiPower: number }) {
+function Row(props: { classId: number; power: number }) {
   return (
-    <div style={{ marginTop: 10 }}>
-      <Typography variant="h6">
-        <ClanMon clanId={props.clanId} />
-        {` ${props.kamiPower}% chance of winning a tournament`}
-      </Typography>
+    <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <ClassBadge classId={props.classId} />
+      <Typography variant="h6">{`${props.power}% share of tournament-winning power`}</Typography>
     </div>
   )
 }
@@ -40,22 +38,17 @@ export function TournamentStatistics(props: {
 
       <div style={{ margin: '10px 15px 0' }}>
         <Typography variant="h5" align="center">
-          Kami Ranking
+          Class Power Ranking
         </Typography>
         <Typography>
-          This ranking takes in account the matchups for each clan, and how those matchups
-          themselves balance against the field. Having a spread of good matchups is better than
-          having a few heavily favored matchups, but being bad in other matchups. Clans also ranks
-          higher when they are strong against other strong clans, and lose more points when having a
-          bad matchup against a top clan. It is named after the Tournament of the Kami. To read more
-          on how the Kami Ranking is calculated{' '}
-          <a href="/kami-ranking.pdf" download>
-            check this document.
-          </a>
+          This ranking weighs every class matchup and how those matchups balance against the field.
+          A spread of solid matchups beats a few lopsided ones, and a class ranks higher when it
+          beats other strong classes. It is a Markov-stable estimate of each class&apos;s share of
+          the tournament-winning power based on the games played so far.
         </Typography>
         <br />
-        {data.data.ranking.map(([clanId, kamiPower]) => (
-          <Row key={clanId} clanId={clanId} kamiPower={kamiPower} />
+        {data.data.ranking.map(([classId, power]) => (
+          <Row key={classId} classId={classId} power={power} />
         ))}
       </div>
 

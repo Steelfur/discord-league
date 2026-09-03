@@ -29,6 +29,9 @@ import * as updateDecklist from './handlers/updateDecklist'
 import * as getPodWithMatches from './handlers/getPodWithMatches'
 import * as getCurrentUser from './handlers/getCurrentUser'
 import * as updateUserProfile from './handlers/updateUserProfile'
+import * as getHeroes from './handlers/getHeroes'
+import * as createHero from './handlers/createHero'
+import * as updateHero from './handlers/updateHero'
 import { authenticate, onlyAdmin, withBearerToken } from './middlewares/authorization'
 import { validate } from './middlewares/validator'
 
@@ -47,6 +50,17 @@ export default (): AsyncRouterInstance => {
 
       res.redirect(303, `/?token=${req.user.jwt}`)
     }
+  )
+
+  api.get('/class', getHeroes.classesHandler)
+  api.get('/hero', getHeroes.heroesHandler)
+  api.post('/hero', authenticate, onlyAdmin, validate(createHero.schema), createHero.handler)
+  api.patch(
+    '/hero/:heroId',
+    authenticate,
+    onlyAdmin,
+    validate(updateHero.schema),
+    updateHero.handler
   )
 
   api.get('/user', getAllUsers.handler)

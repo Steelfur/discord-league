@@ -3,7 +3,7 @@ import { Container } from '@material-ui/core'
 import MaterialTable from 'material-table'
 import { useHistory } from 'react-router-dom'
 
-import { ClanMon } from '../components/ClanMon/ClanMon'
+import { HeroTag } from '../components/HeroTag'
 import { EmptyState } from '../components/EmptyState'
 import { Loading } from '../components/Loading'
 import { RequestError } from '../components/RequestError'
@@ -44,17 +44,13 @@ export function UserView(): JSX.Element {
             title: 'Discord Name',
           },
           {
-            field: 'jigokuName',
-            title: 'Jigoku Name',
+            field: 'gemId',
+            title: 'GEM ID',
           },
           {
-            field: 'preferredClan',
-            title: 'Preferred Clan',
-            render: (rowData) => (
-              <div>
-                <ClanMon clanId={rowData.preferredClanId} small /> {rowData.preferredClan}
-              </div>
-            ),
+            field: 'preferredHero',
+            title: 'Preferred Hero',
+            render: (rowData) => <HeroTag heroId={rowData.preferredHeroId} small />,
           },
           {
             field: 'role',

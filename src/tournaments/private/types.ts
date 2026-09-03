@@ -17,7 +17,7 @@ export type ExtendedParticipant = Pick<
   ParticipantData,
   | 'id'
   | 'userId'
-  | 'clanId'
+  | 'heroId'
   | 'dropped'
   | 'discordId'
   | 'discordAvatar'

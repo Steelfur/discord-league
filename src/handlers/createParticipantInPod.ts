@@ -7,12 +7,12 @@ import { ValidatedRequest } from '../middlewares/validator'
 export const schema = {
   body: Joi.object<{
     userId: string
-    clanId: number
+    heroId: number
     timezoneId: number
     timezonePreferenceId: 'similar' | 'neutral' | 'dissimilar'
   }>({
     userId: Joi.string().required(),
-    clanId: Joi.number().integer().min(1).required(),
+    heroId: Joi.number().integer().min(1).required(),
     timezoneId: Joi.number().integer().min(1).required(),
     timezonePreferenceId: Joi.string().valid('similar', 'neutral', 'dissimilar').required(),
   }),
@@ -41,7 +41,7 @@ export async function handler(
 
   const newParticipant = await db.insertParticipant({
     tournamentId: pod.tournamentId,
-    clanId: req.body.clanId,
+    heroId: req.body.heroId,
     timezoneId: req.body.timezoneId,
     timezonePreferenceId: req.body.timezonePreferenceId,
     userId: req.body.userId,
@@ -58,9 +58,9 @@ export async function handler(
       db
         .insertMatch({
           playerAId: participant.id,
-          deckAClanId: participant.clanId,
+          playerAHeroId: participant.heroId,
           playerBId: newParticipant.id,
-          deckBClanId: newParticipant.clanId,
+          playerBHeroId: newParticipant.heroId,
           deadline: deadline,
         })
         .then((match) => db.connectMatchToPod(match.id, podId))

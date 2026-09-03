@@ -9,8 +9,8 @@ import { ValidatedRequest } from '../middlewares/validator'
 export const schema = {
   body: Joi.object<User$patchById['request']['body']>({
     permissions: Joi.number().integer().optional(),
-    preferredClanId: Joi.number().integer().optional(),
-    jigokuName: Joi.string().optional(),
+    preferredHeroId: Joi.number().integer().optional(),
+    gemId: Joi.string().optional(),
   }),
 }
 
@@ -33,9 +33,9 @@ export async function handler(
   const discordUser = await discordClient.fetchUser(req.params.userId)
 
   const user = {
-    jigokuName: userRow.jigokuName,
+    gemId: userRow.gemId,
     permissions: userRow.permissions,
-    preferredClanId: userRow.preferredClanId,
+    preferredHeroId: userRow.preferredHeroId,
     discordId: discordUser.id,
     tag: discordUser.tag,
     displayAvatarURL: discordUser.displayAvatarURL(),

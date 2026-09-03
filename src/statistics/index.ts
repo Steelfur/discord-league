@@ -1,1 +1,1 @@
-export { kamiRanking } from './private/kamiRanking'
+export { powerRanking, RankableMatch } from './private/powerRanking'

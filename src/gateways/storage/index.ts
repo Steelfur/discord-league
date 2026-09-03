@@ -1,6 +1,16 @@
 export { createBracket, fetchBrackets } from './private/bracket'
 
 export {
+  ClassRecord,
+  HeroRecord,
+  fetchClasses,
+  fetchHeroes,
+  fetchHero,
+  insertHero,
+  updateHero,
+} from './private/hero'
+
+export {
   createDecklist,
   fetchTournamentDecklists,
   fetchDecklistForParticipant,

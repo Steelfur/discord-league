@@ -10,8 +10,8 @@ export interface UserRecord {
   discordAccessToken: string
   discordRefreshToken: string
   permissions: number
-  preferredClanId?: number
-  jigokuName?: string
+  preferredHeroId?: number
+  gemId?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -23,8 +23,8 @@ export type UserReadModel = Pick<
   | 'discordDiscriminator'
   | 'discordAvatar'
   | 'permissions'
-  | 'preferredClanId'
-  | 'jigokuName'
+  | 'preferredHeroId'
+  | 'gemId'
 >
 
 const userColumns = [
@@ -33,8 +33,8 @@ const userColumns = [
   'discordDiscriminator',
   'discordAvatar',
   'permissions',
-  'preferredClanId',
-  'jigokuName',
+  'preferredHeroId',
+  'gemId',
 ]
 
 export async function getAllUsers(): Promise<UserReadModel[]> {

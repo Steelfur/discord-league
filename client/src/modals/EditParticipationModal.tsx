@@ -14,7 +14,7 @@ import {
 } from '@material-ui/core'
 
 import { UserContext } from '../App'
-import { ClanSelect } from '../components/ClanSelect'
+import { HeroSelect } from '../components/HeroSelect'
 import { UserAvatar } from '../components/UserAvatar/UserAvatar'
 import { isAdmin } from '../hooks/useUsers'
 import { timezones, timezonePreferences } from '../utils/timezoneUtils'
@@ -46,7 +46,7 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface State {
   userId: string
-  clanId: number
+  heroId: number
   timezoneId: number
   timezonePreferenceId: string
   participationId?: number
@@ -58,7 +58,7 @@ function reducer(state: State, action: any): State {
     case 'CHANGE_CLAN':
       return {
         ...state,
-        clanId: action.payload,
+        heroId: action.payload,
       }
     case 'CHANGE_USER':
       return {
@@ -85,7 +85,7 @@ export function EditParticipationModal(props: {
   onClose: () => void
   onSubmit: (
     userId: string,
-    clanId: number,
+    heroId: number,
     timezoneId: number,
     timezonePreferenceId: string,
     participationId?: number
@@ -98,7 +98,7 @@ export function EditParticipationModal(props: {
   const classes = useStyles()
   const initialState: State = props.initialState || {
     userId: user?.discordId || '',
-    clanId: user?.preferredClanId || 1,
+    heroId: user?.preferredHeroId || 1,
     timezoneId: 1,
     timezonePreferenceId: 'similar',
     participationId: undefined,
@@ -147,10 +147,10 @@ export function EditParticipationModal(props: {
             )}
           </Grid>
           <Grid item>
-            <ClanSelect
-              preferredClanId={state.clanId}
-              label="Clan"
-              onChange={(clanId) => dispatch({ type: 'CHANGE_CLAN', payload: clanId })}
+            <HeroSelect
+              heroId={state.heroId}
+              label="Hero"
+              onChange={(heroId) => dispatch({ type: 'CHANGE_CLAN', payload: heroId })}
             />
           </Grid>
           <Grid item>
@@ -212,7 +212,7 @@ export function EditParticipationModal(props: {
             onClick={() =>
               props.onSubmit(
                 state.userId || user.discordId,
-                state.clanId,
+                state.heroId,
                 state.timezoneId,
                 state.timezonePreferenceId,
                 state.participationId

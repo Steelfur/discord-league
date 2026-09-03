@@ -1,41 +1,8 @@
 import { Tournament$findStatistics } from '@dl/api'
 import { Request, Response } from 'express'
-import * as A from 'fp-ts/lib/Array'
 
 import * as db from '../gateways/storage'
-import { kamiRanking } from '../statistics'
-
-interface Match {
-  playerAId: number
-  playerBId: number
-  winnerId?: number
-  victoryConditionId?: number
-  deckAClanId?: number
-  deckBClanId?: number
-}
-
-interface ValidMatch {
-  playerAId: number
-  playerBId: number
-  winnerId: number
-  victoryConditionId: number
-  deckAClanId: number
-  deckBClanId: number
-}
-
-function isValidMatch(m: Match | ValidMatch): m is ValidMatch {
-  return (
-    m.winnerId != null &&
-    m.playerAId != null &&
-    m.playerBId != null &&
-    m.deckAClanId != null &&
-    m.deckBClanId != null &&
-    (m.victoryConditionId === 1 ||
-      m.victoryConditionId === 2 ||
-      m.victoryConditionId === 3 ||
-      m.victoryConditionId === 6)
-  )
-}
+import { powerRanking, RankableMatch } from '../statistics'
 
 export async function handler(
   req: Request<Tournament$findStatistics['request']['params']>,
@@ -53,14 +20,47 @@ export async function handler(
     return
   }
 
-  const matches = await db.fetchMatchesForTournament(tournamentRecord.id)
-  const validMatches = A.filter(isValidMatch)(matches)
-  const rawRanking = kamiRanking(validMatches)
-  const ranking = rawRanking
+  const [matches, heroes, classes] = await Promise.all([
+    db.fetchMatchesForTournament(tournamentRecord.id),
+    db.fetchHeroes(),
+    db.fetchClasses(),
+  ])
+
+  const classIdByHeroId = new Map(heroes.map((h) => [h.id, h.classId]))
+
+  // Only decisive, played games between two known, different classes count.
+  const rankableMatches: RankableMatch[] = matches.flatMap((m) => {
+    const entityA = m.playerAHeroId != null ? classIdByHeroId.get(m.playerAHeroId) : undefined
+    const entityB = m.playerBHeroId != null ? classIdByHeroId.get(m.playerBHeroId) : undefined
+    if (
+      m.winnerId == null ||
+      m.isDraw ||
+      m.noShow ||
+      entityA == null ||
+      entityB == null ||
+      entityA === entityB
+    ) {
+      return []
+    }
+    return [
+      {
+        playerAId: m.playerAId,
+        playerBId: m.playerBId,
+        winnerId: m.winnerId,
+        entityA,
+        entityB,
+      },
+    ]
+  })
+
+  const classesWithGames = new Set(rankableMatches.flatMap((m) => [m.entityA, m.entityB]))
+  const rankedClassIds = classes.map((c) => c.id).filter((id) => classesWithGames.has(id))
+
+  const ranking = powerRanking(rankableMatches, rankedClassIds)
     .sort(([, powerA], [, powerB]) => -(powerA - powerB))
-    .map<[clanId: number, kamiPower: number]>(([clanId, kamiPower]) => [
-      clanId,
-      Math.round(kamiPower * 1000) / 10,
+    .map<[classId: number, power: number]>(([classId, power]) => [
+      classId,
+      Math.round(power * 1000) / 10,
     ])
 
   res.status(200).send({ ranking })

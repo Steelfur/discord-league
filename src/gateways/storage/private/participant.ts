@@ -6,7 +6,7 @@ export const TABLE = 'participants'
 export interface ParticipantRecord {
   id: number
   userId: string
-  clanId: number
+  heroId: number
   tournamentId: number
   timezoneId: number
   timezonePreferenceId: 'similar' | 'neutral' | 'dissimilar'
@@ -32,7 +32,7 @@ export async function fetchParticipants(tournamentId: number): Promise<Participa
       SELECT
         p."id" as "id",
         p."userId" as "userId",
-        p."clanId" as "clanId",
+        p."heroId" as "heroId",
         p."tournamentId" as "tournamentId",
         p."timezoneId" as "timezoneId",
         p."timezonePreferenceId" as "timezonePreferenceId",
@@ -74,7 +74,7 @@ export async function fetchParticipantWithUserData(
       SELECT
         p."id" as "id",
         p."userId" as "userId",
-        p."clanId" as "clanId",
+        p."heroId" as "heroId",
         p."tournamentId" as "tournamentId",
         p."timezoneId" as "timezoneId",
         p."timezonePreferenceId" as "timezonePreferenceId",
@@ -104,7 +104,7 @@ export async function fetchMultipleParticipantsWithUserData(
       SELECT
         p."id" as "id",
         p."userId" as "userId",
-        p."clanId" as "clanId",
+        p."heroId" as "heroId",
         p."tournamentId" as "tournamentId",
         p."timezoneId" as "timezoneId",
         p."timezonePreferenceId" as "timezonePreferenceId",
@@ -127,7 +127,7 @@ export async function fetchMultipleParticipantsWithUserData(
 export async function updateParticipant(
   participant: Pick<
     ParticipantRecord,
-    'id' | 'userId' | 'clanId' | 'timezoneId' | 'timezonePreferenceId'
+    'id' | 'userId' | 'heroId' | 'timezoneId' | 'timezonePreferenceId'
   >
 ): Promise<ParticipantRecord> {
   const result = await pg(TABLE)
@@ -141,7 +141,7 @@ export async function updateParticipants(
   update: Partial<
     Pick<
       ParticipantRecord,
-      'clanId' | 'timezoneId' | 'timezonePreferenceId' | 'dropped' | 'bracket'
+      'heroId' | 'timezoneId' | 'timezonePreferenceId' | 'dropped' | 'bracket'
     >
   >
 ): Promise<ParticipantRecord[]> {
@@ -151,7 +151,7 @@ export async function updateParticipants(
 export async function insertParticipant(
   participant: Pick<
     ParticipantRecord,
-    'userId' | 'clanId' | 'tournamentId' | 'timezoneId' | 'timezonePreferenceId'
+    'userId' | 'heroId' | 'tournamentId' | 'timezoneId' | 'timezonePreferenceId'
   >
 ): Promise<ParticipantRecord> {
   return pg(TABLE)

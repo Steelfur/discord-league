@@ -10,9 +10,23 @@ export interface Bracket {
   url: string
 }
 
+export interface Class {
+  id: number
+  name: string
+  sortOrder: number
+  active: boolean
+}
+
+export interface Hero {
+  id: number
+  name: string
+  classId: number
+  active: boolean
+}
+
 export interface Decklist {
   bracket: 'silverCup' | 'goldCup' | null
-  clanId: number
+  heroId: number
   decklist: string
   discordAvatar: string
   discordId: string
@@ -33,7 +47,7 @@ export interface Tournament {
 export interface Participant {
   id: number
   userId: string
-  clanId: number
+  heroId: number
   dropped: boolean
   discordAvatar: string
   discordId: string
@@ -49,7 +63,7 @@ export interface Participant {
 export interface ParticipantWithUserData {
   id: number
   userId: string
-  clanId: number
+  heroId: number
   timezoneId: number
   timezonePreferenceId: 'similar' | 'neutral' | 'dissimilar'
   discordAvatar: string
@@ -69,13 +83,10 @@ export interface MatchData {
   playerBId: number
   winnerId?: number
   firstPlayerId?: number
-  victoryConditionId?: number
-  deckAClanId?: number
-  deckARoleId?: number
-  deckASplashId?: number
-  deckBClanId?: number
-  deckBRoleId?: number
-  deckBSplashId?: number
+  playerAHeroId?: number
+  playerBHeroId?: number
+  isDraw: boolean
+  noShow: boolean
   deadline?: Date
 }
 
@@ -89,13 +100,10 @@ export interface ExtendedMatch {
   playerBId: number
   winnerId?: number
   firstPlayerId?: number
-  victoryConditionId?: number
-  deckAClanId?: number
-  deckARoleId?: number
-  deckASplashId?: number
-  deckBClanId?: number
-  deckBRoleId?: number
-  deckBSplashId?: number
+  playerAHeroId?: number
+  playerBHeroId?: number
+  isDraw: boolean
+  noShow: boolean
   deadline?: Date
   participantA: ParticipantWithUserData
   participantB: ParticipantWithUserData
@@ -103,7 +111,7 @@ export interface ExtendedMatch {
 
 export interface RankedParticipant {
   bracket: 'silverCup' | 'goldCup' | null
-  clanId: number
+  heroId: number
   discordAvatar: string
   discordId: string
   discordName: string
@@ -130,9 +138,9 @@ export interface PodResult {
 
 export interface User {
   discordId: string
-  jigokuName?: string
+  gemId?: string
   permissions: number
-  preferredClanId?: number
+  preferredHeroId?: number
   displayAvatarURL: string
   tag: string
 }
@@ -140,9 +148,9 @@ export interface User {
 export interface UserRowData {
   discordName: string
   displayAvatarURL: string
-  jigokuName: string
-  preferredClan: string
-  preferredClanId?: number
+  gemId: string
+  preferredHero: string
+  preferredHeroId?: number
   role: 'Player' | 'Admin'
   userId: string
 }
@@ -173,7 +181,7 @@ export interface User$findCurrent {
 export interface User$patchById {
   request: {
     params: { userId: string }
-    body: Partial<{ permissions: number; preferredClanId: number; jigokuName: string }>
+    body: Partial<{ permissions: number; preferredHeroId: number; gemId: string }>
   }
   response: User
 }
@@ -187,13 +195,13 @@ export interface Match$updateReport {
     params: { matchId: string }
     body: {
       id: number
-      winnerId: number
-      victoryConditionId: number
+      // winnerId set => that player won. Omit / null for a draw or all-no-show.
+      winnerId?: number | null
+      isDraw?: boolean
+      noShow?: boolean
       firstPlayerId?: number
-      deckARoleId?: number
-      deckBRoleId?: number
-      deckASplashId?: number
-      deckBSplashId?: number
+      playerAHeroId?: number
+      playerBHeroId?: number
     }
   }
   response: undefined
@@ -273,6 +281,28 @@ export interface Tournament$findById {
 export interface Tournament$findStatistics {
   request: { params: { tournamentId: string } }
   response: {
-    ranking: [clanId: number, kamiPower: number][]
+    // [classId, powerScore] — Markov-stable win-power per class, descending.
+    ranking: [classId: number, power: number][]
   }
+}
+
+export interface Class$findAll {
+  response: Class[]
+}
+
+export interface Hero$findAll {
+  response: Hero[]
+}
+
+export interface Hero$create {
+  request: { body: { name: string; classId: number; active?: boolean } }
+  response: Hero
+}
+
+export interface Hero$update {
+  request: {
+    params: { heroId: string }
+    body: Partial<{ name: string; classId: number; active: boolean }>
+  }
+  response: Hero
 }

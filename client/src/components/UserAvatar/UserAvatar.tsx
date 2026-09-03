@@ -1,6 +1,6 @@
 import { FC, memo, ReactEventHandler } from 'react'
 import styles from './styles.module.scss'
-import { ClanMon } from '../ClanMon/ClanMon'
+import { ClassDot } from '../HeroTag'
 
 const avatarFallback = (id?: string) =>
   `https://cdn.discordapp.com/embed/avatars/${
@@ -52,7 +52,7 @@ export const UserAvatarAndClan: FC<{
     discordId: string
     discordAvatar: string
     discordTag: string
-    clanId: number
+    heroId: number
     displayAvatarURL?: string
   }
   dropped?: boolean
@@ -66,7 +66,7 @@ export const UserAvatarAndClan: FC<{
 
   return (
     <div className={styles.root}>
-      <ClanMon clanId={props.user.clanId} small />
+      <ClassDot heroId={props.user.heroId} small />
 
       <img
         src={src}

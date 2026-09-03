@@ -7,7 +7,7 @@ client.login(env.discordBotToken)
 
 const discordClient = forge({
   clientId: 'discord',
-  host: 'https://discordapp.com',
+  host: 'https://discord.com',
   resources: {
     Users: {
       getCurrent: {

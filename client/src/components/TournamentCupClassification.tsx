@@ -19,11 +19,11 @@ import { isAdmin } from '../hooks/useUsers'
 import { SubmitDecklistModal } from '../modals/SubmitDecklistModal'
 import { UserAvatarAndClan } from './UserAvatar/UserAvatar'
 
-function groupByCup<P extends { clanId: number; bracket: 'goldCup' | 'silverCup' | null }>(
+function groupByCup<P extends { heroId: number; bracket: 'goldCup' | 'silverCup' | null }>(
   players: P[]
 ) {
   return players
-    .sort((a, b) => a.clanId - b.clanId)
+    .sort((a, b) => a.heroId - b.heroId)
     .reduce<[P[], P[]]>(
       (cups, participant) => {
         if (participant.bracket === 'goldCup') {

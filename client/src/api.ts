@@ -26,6 +26,14 @@ export const api = forge({
   middleware: [BearerToken, EncodeJson, GlobalErrorHandler],
   host: '/api',
   resources: {
+    Class: {
+      findAll: { method: 'GET', path: '/class' },
+    },
+    Hero: {
+      findAll: { method: 'GET', path: '/hero' },
+      create: { method: 'POST', path: '/hero' },
+      update: { method: 'PATCH', path: '/hero/{heroId}' },
+    },
     Decklist: {
       createForParticipant: { method: 'POST', path: '/participant/{participantId}/decklist' },
       updateForParticipant: { method: 'PUT', path: '/participant/{participantId}/decklist' },

@@ -1,3 +1,11 @@
+// Public origin of the app. Explicit HOST wins; otherwise fall back to the
+// domain Railway injects, so a fresh deploy works before a custom domain.
+const host =
+  process.env.HOST ||
+  (process.env.RAILWAY_PUBLIC_DOMAIN
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+    : `http://localhost:${process.env.PORT || 8080}`)
+
 export default {
   challongeApiKey: String(process.env.CHALLONGE_API_KEY),
   challongeUsername: String(process.env.CHALLONGE_USERNAME),
@@ -5,7 +13,7 @@ export default {
   discordBotToken: String(process.env.DISCORD_BOT_TOKEN),
   discordClientId: String(process.env.DISCORD_CLIENT_ID),
   discordClientSecret: String(process.env.DISCORD_CLIENT_SECRET),
-  host: String(process.env.HOST),
+  host,
   jwtSecret: String(process.env.JWT_SECRET),
   nodeEnv: String(process.env.NODE_ENV).trim(),
   sentryDsn: String(process.env.SENTRY_DSN),
