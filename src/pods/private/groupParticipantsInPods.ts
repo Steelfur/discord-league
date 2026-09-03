@@ -17,7 +17,7 @@ import {
   nonSequentialCompatibleSizes,
 } from './bucket'
 
-const byClan = contramap<number, Player>((player) => player.clanId)(ordNumber)
+const byClan = contramap<number, Player>((player) => player.heroId)(ordNumber)
 
 const separateSimilarFromFluid = A.partition<Player>(
   (player) => player.timezonePreferenceId === 'similar'
@@ -70,7 +70,7 @@ const toBuckets = (
   fluid.forEach((playerToAssign) => {
     pipe(
       buckets,
-      A.sortBy([byPlayerToCompatibleDESC, byClanPopularityASC(playerToAssign.clanId)]),
+      A.sortBy([byPlayerToCompatibleDESC, byClanPopularityASC(playerToAssign.heroId)]),
       A.head,
       O.map((targetBucket) => targetBucket.addPlayer(playerToAssign))
     )
@@ -122,7 +122,7 @@ export function groupParticipantsInPods(bucketType: '67' | '78', players: Player
     players.push({
       id,
       userId: 'ghost',
-      clanId: 0,
+      heroId: 0,
       tournamentId: 0,
       timezoneId: 0,
       timezonePreferenceId: 'neutral',

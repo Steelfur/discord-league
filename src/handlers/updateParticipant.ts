@@ -8,13 +8,13 @@ export const schema = {
   body: Joi.object<{
     id: number
     userId: string
-    clanId: number
+    heroId: number
     timezoneId: number
     timezonePreferenceId: 'similar' | 'neutral' | 'dissimilar'
   }>({
     id: Joi.number().required(),
     userId: Joi.string().required(),
-    clanId: Joi.number().integer().min(1).required(),
+    heroId: Joi.number().integer().min(1).required(),
     timezoneId: Joi.number().integer().min(1).required(),
     timezonePreferenceId: Joi.string().valid('similar', 'neutral', 'dissimilar').required(),
   }),

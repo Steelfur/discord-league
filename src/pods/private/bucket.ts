@@ -69,7 +69,7 @@ export const byPlayerToCompatibleDESC = contramap<number, Bucket>(
 export const byTimezoneProximity = (tzId: number): Ord<Bucket> =>
   contramap<number, Bucket>(({ tzs }) => tzs.map((tz) => Math.abs(tz - tzId)).sort()[0])(ordNumber)
 
-export const byClanPopularityASC = (clanId: number): Ord<Bucket> =>
+export const byClanPopularityASC = (heroId: number): Ord<Bucket> =>
   contramap<number, Bucket>(
-    ({ players }) => players.filter((player) => player.clanId === clanId).length / players.length
+    ({ players }) => players.filter((player) => player.heroId === heroId).length / players.length
   )(ordNumber)

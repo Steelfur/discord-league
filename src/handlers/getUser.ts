@@ -18,9 +18,9 @@ export async function handler(
   }
 
   const user = {
-    jigokuName: userRow.jigokuName,
+    gemId: userRow.gemId,
     permissions: userRow.permissions,
-    preferredClanId: userRow.preferredClanId,
+    preferredHeroId: userRow.preferredHeroId,
     discordId: discordUser.id,
     tag: discordUser.tag,
     displayAvatarURL: discordUser.displayAvatarURL(),

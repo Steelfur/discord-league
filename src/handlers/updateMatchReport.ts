@@ -8,13 +8,12 @@ import { ValidatedRequest } from '../middlewares/validator'
 export const schema = {
   body: Joi.object<Match$updateReport['request']['body']>({
     id: Joi.number().integer().required(),
-    winnerId: Joi.number().integer().required(),
-    victoryConditionId: Joi.number().integer().min(1).required(),
+    winnerId: Joi.number().integer().allow(null).optional(),
+    isDraw: Joi.boolean().optional(),
+    noShow: Joi.boolean().optional(),
     firstPlayerId: Joi.number().integer().optional(),
-    deckARoleId: Joi.number().integer().min(1).optional(),
-    deckBRoleId: Joi.number().integer().min(1).optional(),
-    deckASplashId: Joi.number().integer().min(1).optional(),
-    deckBSplashId: Joi.number().integer().min(1).optional(),
+    playerAHeroId: Joi.number().integer().min(1).optional(),
+    playerBHeroId: Joi.number().integer().min(1).optional(),
   }),
 }
 
@@ -52,7 +51,21 @@ export async function handler(
     return
   }
 
-  await db.updateMatch(req.body)
+  const { winnerId } = req.body
+  if (winnerId != null && winnerId !== match.playerAId && winnerId !== match.playerBId) {
+    res.status(400).send()
+    return
+  }
+
+  await db.updateMatch({
+    id: match.id,
+    winnerId: winnerId ?? undefined,
+    isDraw: req.body.isDraw ?? false,
+    noShow: req.body.noShow ?? false,
+    firstPlayerId: req.body.firstPlayerId,
+    playerAHeroId: req.body.playerAHeroId,
+    playerBHeroId: req.body.playerBHeroId,
+  })
 
   res.sendStatus(204)
 }

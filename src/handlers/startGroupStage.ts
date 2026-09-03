@@ -45,13 +45,16 @@ export async function handler(
         .then((createdPod) =>
           Promise.all(
             matchesForPod(pod).map(
-              ([{ id: playerAId, clanId: deckAClanId }, { id: playerBId, clanId: deckBClanId }]) =>
+              ([
+                { id: playerAId, heroId: playerAHeroId },
+                { id: playerBId, heroId: playerBHeroId },
+              ]) =>
                 db
                   .insertMatch({
                     playerAId,
-                    deckAClanId,
+                    playerAHeroId,
                     playerBId,
-                    deckBClanId,
+                    playerBHeroId,
                     deadline: req.body.deadline,
                   })
                   .then((match) => db.connectMatchToPod(match.id, createdPod.id))

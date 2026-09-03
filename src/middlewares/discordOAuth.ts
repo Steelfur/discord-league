@@ -17,11 +17,11 @@ declare global {
   }
 }
 
-const scope = ['identify', 'gdm.join']
+const scope = ['identify']
 const callbackURL = `${env.host}/api/auth/callback`
 const authorizationURL = url.format({
   protocol: 'https',
-  host: 'discordapp.com',
+  host: 'discord.com',
   pathname: '/api/oauth2/authorize',
   query: {
     client_id: env.discordClientId,
@@ -49,7 +49,7 @@ export function discordOAuthStrategy(): Handler {
   const discordOAuthStrategy = new OAuth2Strategy(
     {
       authorizationURL,
-      tokenURL: 'https://discordapp.com/api/oauth2/token',
+      tokenURL: 'https://discord.com/api/oauth2/token',
       clientID: env.discordClientId,
       clientSecret: env.discordClientSecret,
       callbackURL: callbackURL,

@@ -11,13 +11,10 @@ export interface MatchRecord {
   playerBId: number
   winnerId?: number
   firstPlayerId?: number
-  victoryConditionId?: number
-  deckAClanId?: number
-  deckARoleId?: number
-  deckASplashId?: number
-  deckBClanId?: number
-  deckBRoleId?: number
-  deckBSplashId?: number
+  playerAHeroId?: number
+  playerBHeroId?: number
+  isDraw: boolean
+  noShow: boolean
   deadline?: Date
 }
 
@@ -31,59 +28,51 @@ const matchRecordWithPodIdColumns = [
   `${TABLE}.playerBId as playerBId`,
   `${TABLE}.winnerId as winnerId`,
   `${TABLE}.firstPlayerId as firstPlayerId`,
-  `${TABLE}.victoryConditionId as victoryConditionId`,
-  `${TABLE}.deckAClanId as deckAClanId`,
-  `${TABLE}.deckARoleId as deckARoleId`,
-  `${TABLE}.deckASplashId as deckASplashId`,
-  `${TABLE}.deckBClanId as deckBClanId`,
-  `${TABLE}.deckBRoleId as deckBRoleId`,
-  `${TABLE}.deckBSplashId as deckBSplashId`,
+  `${TABLE}.playerAHeroId as playerAHeroId`,
+  `${TABLE}.playerBHeroId as playerBHeroId`,
+  `${TABLE}.isDraw as isDraw`,
+  `${TABLE}.noShow as noShow`,
   `${TABLE}.deadline as deadline`,
   `${PODS_MATCHES}.podId as podId`,
 ]
 
+type MatchSummary = Pick<
+  MatchRecord,
+  | 'createdAt'
+  | 'playerAHeroId'
+  | 'playerBHeroId'
+  | 'isDraw'
+  | 'noShow'
+  | 'firstPlayerId'
+  | 'id'
+  | 'playerAId'
+  | 'playerBId'
+  | 'updatedAt'
+  | 'winnerId'
+>
+
+const MATCH_SUMMARY_SELECT = `
+  mat."playerAHeroId",
+  mat."playerBHeroId",
+  mat."isDraw",
+  mat."noShow",
+  mat."firstPlayerId",
+  mat."id",
+  mat."playerAId",
+  mat."playerBId",
+  mat."createdAt",
+  mat."updatedAt",
+  mat."winnerId"
+`
+
 export async function fetchMatchesForUserInTournament(
   discordId: string,
   tournamentId: number
-): Promise<
-  Array<
-    Pick<
-      MatchRecord,
-      | 'createdAt'
-      | 'deckAClanId'
-      | 'deckARoleId'
-      | 'deckASplashId'
-      | 'deckBClanId'
-      | 'deckBRoleId'
-      | 'deckBSplashId'
-      | 'firstPlayerId'
-      | 'id'
-      | 'playerAId'
-      | 'playerBId'
-      | 'updatedAt'
-      | 'victoryConditionId'
-      | 'winnerId'
-    >
-  >
-> {
+): Promise<MatchSummary[]> {
   return pg
     .raw(
       `
-      SELECT
-        mat."deckAClanId",
-        mat."deckARoleId",
-        mat."deckASplashId",
-        mat."deckBClanId",
-        mat."deckBRoleId",
-        mat."deckBSplashId",
-        mat."firstPlayerId",
-        mat."id",
-        mat."playerAId",
-        mat."playerBId",
-        mat."victoryConditionId",
-        mat."createdAt",
-        mat."updatedAt",
-        mat."winnerId"
+      SELECT ${MATCH_SUMMARY_SELECT}
       FROM "participants" AS part
         INNER JOIN "matches" AS mat
           ON mat."playerAId" = part."id" OR mat."playerBId" = part."id"
@@ -95,47 +84,11 @@ export async function fetchMatchesForUserInTournament(
     .then(({ rows }) => rows)
 }
 
-export async function fetchMatchesForTournament(
-  tournamentId: number
-): Promise<
-  Array<
-    Pick<
-      MatchRecord,
-      | 'createdAt'
-      | 'deckAClanId'
-      | 'deckARoleId'
-      | 'deckASplashId'
-      | 'deckBClanId'
-      | 'deckBRoleId'
-      | 'deckBSplashId'
-      | 'firstPlayerId'
-      | 'id'
-      | 'playerAId'
-      | 'playerBId'
-      | 'updatedAt'
-      | 'victoryConditionId'
-      | 'winnerId'
-    >
-  >
-> {
+export async function fetchMatchesForTournament(tournamentId: number): Promise<MatchSummary[]> {
   return pg
     .raw(
       `
-      SELECT
-        mat."deckAClanId",
-        mat."deckARoleId",
-        mat."deckASplashId",
-        mat."deckBClanId",
-        mat."deckBRoleId",
-        mat."deckBSplashId",
-        mat."firstPlayerId",
-        mat."id",
-        mat."playerAId",
-        mat."playerBId",
-        mat."victoryConditionId",
-        mat."createdAt",
-        mat."updatedAt",
-        mat."winnerId"
+      SELECT ${MATCH_SUMMARY_SELECT}
       FROM "participants" AS part
         INNER JOIN "matches" AS mat
           ON mat."playerAId" = part."id" OR mat."playerBId" = part."id"
@@ -147,7 +100,8 @@ export async function fetchMatchesForTournament(
 }
 
 export async function insertMatch(
-  match: Omit<MatchRecord, 'id' | 'createdAt' | 'updatedAt'>
+  match: Omit<MatchRecord, 'id' | 'createdAt' | 'updatedAt' | 'isDraw' | 'noShow'> &
+    Partial<Pick<MatchRecord, 'isDraw' | 'noShow'>>
 ): Promise<MatchRecord> {
   return pg(TABLE)
     .insert(match, '*')
@@ -174,17 +128,13 @@ export async function fetchMatch(matchId: number): Promise<MatchRecord> {
 }
 
 export async function updateMatch(
-  match: Pick<
-    MatchRecord,
-    | 'id'
-    | 'winnerId'
-    | 'firstPlayerId'
-    | 'victoryConditionId'
-    | 'deckARoleId'
-    | 'deckASplashId'
-    | 'deckBRoleId'
-    | 'deckBSplashId'
-  >
+  match: Pick<MatchRecord, 'id'> &
+    Partial<
+      Pick<
+        MatchRecord,
+        'winnerId' | 'firstPlayerId' | 'playerAHeroId' | 'playerBHeroId' | 'isDraw' | 'noShow'
+      >
+    >
 ): Promise<MatchRecord> {
   const result = await pg(TABLE)
     .where('id', match.id)
@@ -199,11 +149,8 @@ export async function deleteMatchReport(matchId: number): Promise<MatchRecord> {
       {
         winnerId: pg.raw('DEFAULT'),
         firstPlayerId: pg.raw('DEFAULT'),
-        victoryConditionId: pg.raw('DEFAULT'),
-        deckARoleId: pg.raw('DEFAULT'),
-        deckASplashId: pg.raw('DEFAULT'),
-        deckBRoleId: pg.raw('DEFAULT'),
-        deckBSplashId: pg.raw('DEFAULT'),
+        isDraw: pg.raw('DEFAULT'),
+        noShow: pg.raw('DEFAULT'),
         updatedAt: new Date(),
       },
       '*'

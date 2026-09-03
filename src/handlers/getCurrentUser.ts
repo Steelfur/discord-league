@@ -21,9 +21,9 @@ export async function handler(
 
   const discordUser = await discordClient.fetchUser(userRow.discordId)
   const user = {
-    jigokuName: userRow.jigokuName,
+    gemId: userRow.gemId,
     permissions: userRow.permissions,
-    preferredClanId: userRow.preferredClanId,
+    preferredHeroId: userRow.preferredHeroId,
     discordId: discordUser.id,
     tag: discordUser.tag,
     displayAvatarURL: discordUser.displayAvatarURL(),
