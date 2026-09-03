@@ -9,7 +9,10 @@ import env from './env'
 import { discordOAuthStrategy } from './middlewares/discordOAuth'
 import api from './api'
 
-Sentry.init({ dsn: env.sentryDsn })
+// Sentry is optional — only wire it up when a DSN is actually configured.
+if (env.sentryDsn) {
+  Sentry.init({ dsn: env.sentryDsn })
+}
 
 export default async (): Promise<{ app: Express; run: () => void }> => {
   const app = express()

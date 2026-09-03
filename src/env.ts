@@ -16,6 +16,6 @@ export default {
   host,
   jwtSecret: String(process.env.JWT_SECRET),
   nodeEnv: String(process.env.NODE_ENV).trim(),
-  sentryDsn: String(process.env.SENTRY_DSN),
+  sentryDsn: process.env.SENTRY_DSN || undefined,
   serverPort: parseInt(String(process.env.PORT), 10),
 }
