@@ -18,8 +18,10 @@ export async function handler(
   if (tournamentRecord == null) {
     res.sendStatus(404)
     return
-  } else if (tournamentRecord.statusId !== 'endOfGroup') {
-    res.status(403).send('Tournament status cannot be changed to bracket status')
+  }
+  // 'endOfGroup' starts the bracket; 'bracket' re-seeds it.
+  if (tournamentRecord.statusId !== 'endOfGroup' && tournamentRecord.statusId !== 'bracket') {
+    res.status(403).send('The group stage has to be closed before the bracket can start.')
     return
   }
 
@@ -32,12 +34,22 @@ export async function handler(
   const tournament = toTournament(tournamentRecord, podRecords, matchRecords, participantRecords)
   const podResults = tournament.toPodResults()
 
-  await processBrackets(tournamentRecord.id, podResults)
+  const cutSize = await processBrackets(tournamentRecord.id, podResults)
+  if (cutSize < 2) {
+    res
+      .status(409)
+      .send(
+        `Only ${cutSize} player(s) finished with a winning record — not enough for a bracket. Report more results first.`
+      )
+    return
+  }
 
-  await Promise.all([
-    db.lockTournamentDecklists(tournamentId),
-    db.updateTournament(tournamentId, { statusId: 'bracket' }),
-  ])
+  if (tournamentRecord.statusId === 'endOfGroup') {
+    await Promise.all([
+      db.lockTournamentDecklists(tournamentId),
+      db.updateTournament(tournamentId, { statusId: 'bracket' }),
+    ])
+  }
 
   res.sendStatus(200)
 }

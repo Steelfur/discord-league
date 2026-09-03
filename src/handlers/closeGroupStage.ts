@@ -7,9 +7,9 @@ import { toTournament } from '../tournaments'
 import * as db from '../gateways/storage'
 
 function getParticipantIdsForMatches(matches: db.MatchRecordWithPodId[]): number[] {
-  const participantIds: number[] = matches
-    .map((match) => (match.playerAId && match.playerBId ? [match.playerAId, match.playerBId] : []))
-    .reduce((matchA, matchB) => matchA.concat(matchB))
+  const participantIds = matches.flatMap((match) =>
+    match.playerAId && match.playerBId ? [match.playerAId, match.playerBId] : []
+  )
   return Array.from(new Set(participantIds))
 }
 
@@ -33,9 +33,15 @@ export async function handler(
   }
 
   const pods = await db.fetchTournamentPods(tournamentId)
+  if (pods.length === 0) {
+    res.status(409).send('This tournament has no pods. Start the group stage first.')
+    return
+  }
   const matches = await db.fetchMatchesForMultiplePods(pods.map((pod) => pod.id))
   const participantIds = getParticipantIdsForMatches(matches)
-  const participants = await db.fetchMultipleParticipantsWithUserData(participantIds)
+  const participants = participantIds.length
+    ? await db.fetchMultipleParticipantsWithUserData(participantIds)
+    : []
 
   const tournament = toTournament(tournamentRecord, pods, matches, participants)
   const podResults = tournament.toPodResults()

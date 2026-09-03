@@ -13,13 +13,11 @@ interface PodLike {
 }
 
 /**
- * Seed and persist the double-elimination bracket for a tournament.
- *
- * Cut = everyone who finished the group stage with a winning record. Seeding:
- * wins, then strength of schedule (average win rate of your pod opponents),
- * then fewest losses.
+ * The ids that make the cut, best-seeded first: everyone with a winning group
+ * record, ordered by wins, then strength of schedule (average win rate of pod
+ * opponents), then fewest losses.
  */
-export async function processBrackets(tournamentId: number, pods: PodLike[]): Promise<void> {
+export function computeCut(pods: PodLike[]): number[] {
   const seeded: Array<{ id: number; wins: number; losses: number; sos: number }> = []
 
   for (const pod of pods) {
@@ -32,10 +30,15 @@ export async function processBrackets(tournamentId: number, pods: PodLike[]): Pr
     }
   }
 
-  const cut = seeded
+  return seeded
     .filter((p) => p.wins > p.losses)
     .sort((a, b) => b.wins - a.wins || b.sos - a.sos || a.losses - b.losses)
+    .map((p) => p.id)
+}
 
-  const local = generateBracket(cut.map((p) => p.id))
-  await db.createBracketMatches(tournamentId, local)
+/** Seed and persist the double-elimination bracket. Returns the cut size. */
+export async function processBrackets(tournamentId: number, pods: PodLike[]): Promise<number> {
+  const cut = computeCut(pods)
+  await db.createBracketMatches(tournamentId, generateBracket(cut))
+  return cut.length
 }

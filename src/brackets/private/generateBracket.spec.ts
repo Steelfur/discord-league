@@ -64,14 +64,56 @@ test('generateBracket: fewer than two players yields no bracket', (t) => {
   t.deepEqual(generateBracket([1]), [])
 })
 
-test('generateBracket(4): top seed gets a bye and auto-advances', (t) => {
-  const matches = generateBracket(ids(3))
-  const map = byKey(matches)
-  // seed 1 vs seed 4(bye) is W-1-0
-  const first = map.get('W-1-0')!
-  t.is(first.participantAId, 1)
-  t.is(first.participantBId, null)
-  t.is(first.winnerId, 1, 'bye should auto-advance seed 1')
+test('generateBracket(3): the bye match is pruned and seed 1 starts in the WB final', (t) => {
+  const map = byKey(generateBracket(ids(3)))
+  t.false(map.has('W-1-0'), 'seed 1 vs bye is removed, not left as a stub')
   const wbFinal = map.get('W-2-0')!
-  t.is(wbFinal.participantAId, 1, 'bye winner should be placed into the WB final')
+  t.is(wbFinal.participantAId, 1, 'seed 1 is placed straight into the WB final')
 })
+
+// Play a whole bracket through (higher seed always wins) and check the double
+// elimination structure holds: everyone can lose once, one champion emerges.
+for (const n of [2, 3, 4, 5, 6, 8, 12, 16]) {
+  test(`generateBracket(${n}): full playthrough crowns exactly one champion`, (t) => {
+    const map = byKey(generateBracket(ids(n)))
+    const A = (m: LocalMatch) => m.participantAId
+    const B = (m: LocalMatch) => m.participantBId
+    const losses = new Map<number, number>()
+
+    let guard = 0
+    let progressed = true
+    while (progressed && guard++ < 500) {
+      progressed = false
+      for (const m of map.values()) {
+        if (m.winnerId != null || A(m) == null || B(m) == null) continue
+        const winner = Math.min(A(m) as number, B(m) as number) // higher seed = lower id
+        const loser = winner === A(m) ? (B(m) as number) : (A(m) as number)
+        m.winnerId = winner
+        losses.set(loser, (losses.get(loser) ?? 0) + 1)
+        if (m.winnerToKey) {
+          const d = map.get(m.winnerToKey)!
+          if (m.winnerToSlot === 'A') d.participantAId = winner
+          else d.participantBId = winner
+        }
+        if (m.loserToKey) {
+          const d = map.get(m.loserToKey)!
+          if (m.loserToSlot === 'A') d.participantAId = loser
+          else d.participantBId = loser
+        }
+        progressed = true
+      }
+    }
+
+    const gf = [...map.values()].find((m) => m.side === 'grandFinal')!
+    t.not(gf.winnerId, null, 'grand final has a winner')
+    t.is(gf.winnerId, 1, 'top seed wins when higher seed always wins')
+    // nobody is eliminated with fewer than 2 losses except the champion (0)
+    for (const id of ids(n)) {
+      if (id === gf.winnerId) {
+        t.true((losses.get(id) ?? 0) <= 1, `champion ${id} lost at most once`)
+      } else {
+        t.is(losses.get(id) ?? 0, 2, `player ${id} was eliminated after exactly 2 losses`)
+      }
+    }
+  })
+}

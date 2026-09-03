@@ -4,14 +4,11 @@
  */
 
 exports.up = async function (knex) {
-  await knex.schema.alterTable('participants', function (table) {
-    table.dropColumn('timezoneId')
-    table.dropColumn('timezonePreferenceId')
-  })
-  await knex.schema.alterTable('pods', function (table) {
-    table.dropColumn('timezoneId')
-  })
+  // Raw + IF EXISTS so a partial earlier run can't wedge the migration.
   await knex.raw(`
+    ALTER TABLE "participants" DROP COLUMN IF EXISTS "timezoneId";
+    ALTER TABLE "participants" DROP COLUMN IF EXISTS "timezonePreferenceId";
+    ALTER TABLE "pods" DROP COLUMN IF EXISTS "timezoneId";
     DROP TABLE IF EXISTS "timezone_preferences" CASCADE;
     DROP TABLE IF EXISTS "timezones" CASCADE;
   `)

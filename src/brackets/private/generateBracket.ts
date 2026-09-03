@@ -174,47 +174,80 @@ export function generateBracket(seededParticipantIds: number[]): LocalMatch[] {
     loserToSlot: null,
   })
 
-  resolveByes(matches)
-  return [...matches.values()]
+  return pruneByes(matches)
 }
 
-/** Auto-advance any match where one player is set and the other slot can never fill. */
-function resolveByes(matches: Map<string, LocalMatch>): void {
-  // A slot is "closed empty" if nothing routes into it and it has no participant.
-  const routedInto = new Set<string>() // `${key}:${slot}`
-  for (const m of matches.values()) {
-    if (m.winnerToKey) routedInto.add(`${m.winnerToKey}:${m.winnerToSlot}`)
-    if (m.loserToKey) routedInto.add(`${m.loserToKey}:${m.loserToSlot}`)
+interface Feeder {
+  match: LocalMatch
+  outcome: 'winner' | 'loser'
+}
+
+/**
+ * Remove bye paths produced by a non-power-of-2 field:
+ *  - a real participant with no opponent auto-advances (the empty match is dropped)
+ *  - a slot fed by a match whose sibling slot can never fill collapses: the feeder
+ *    is rewired straight to where this match's winner would have gone.
+ */
+function pruneByes(matchMap: Map<string, LocalMatch>): LocalMatch[] {
+  const removed = new Set<string>()
+
+  const rebuildFeeders = () => {
+    const feeders = new Map<string, Feeder>() // `${key}:${slot}` -> feeder
+    for (const m of matchMap.values()) {
+      if (removed.has(m.key)) continue
+      if (m.winnerToKey && !removed.has(m.winnerToKey)) {
+        feeders.set(`${m.winnerToKey}:${m.winnerToSlot}`, { match: m, outcome: 'winner' })
+      }
+      if (m.loserToKey && !removed.has(m.loserToKey)) {
+        feeders.set(`${m.loserToKey}:${m.loserToSlot}`, { match: m, outcome: 'loser' })
+      }
+    }
+    return feeders
   }
 
   let changed = true
   while (changed) {
     changed = false
-    for (const m of matches.values()) {
-      if (m.winnerId != null) continue
-      const aFilled = m.participantAId != null
-      const bFilled = m.participantBId != null
-      const aEmpty = !aFilled && !routedInto.has(`${m.key}:A`)
-      const bEmpty = !bFilled && !routedInto.has(`${m.key}:B`)
+    const feeders = rebuildFeeders()
+    const sourced = (key: string, slot: 'A' | 'B', has: boolean) =>
+      has || feeders.has(`${key}:${slot}`)
 
-      let advancing: number | null = null
-      if (aFilled && bEmpty) advancing = m.participantAId
-      else if (bFilled && aEmpty) advancing = m.participantBId
-      else if (aEmpty && bEmpty) advancing = null // dead match, nothing to do
-      if (advancing == null) continue
+    for (const m of matchMap.values()) {
+      if (removed.has(m.key) || m.winnerId != null || m.side === 'grandFinal') continue
+      const aSourced = sourced(m.key, 'A', m.participantAId != null)
+      const bSourced = sourced(m.key, 'B', m.participantBId != null)
+      if (aSourced && bSourced) continue
 
-      m.winnerId = advancing
+      const liveSlot: 'A' | 'B' | null = aSourced ? 'A' : bSourced ? 'B' : null
+      if (liveSlot == null) {
+        removed.add(m.key)
+        changed = true
+        continue
+      }
+
+      const participant = liveSlot === 'A' ? m.participantAId : m.participantBId
+      if (participant != null) {
+        // real player, no opponent: advance them and drop this match
+        if (m.winnerToKey) {
+          const dest = matchMap.get(m.winnerToKey)!
+          if (m.winnerToSlot === 'A') dest.participantAId = participant
+          else dest.participantBId = participant
+        }
+      } else {
+        // fed by a match whose sibling is dead: rewire that feeder past us
+        const feeder = feeders.get(`${m.key}:${liveSlot}`)!
+        if (feeder.outcome === 'winner') {
+          feeder.match.winnerToKey = m.winnerToKey
+          feeder.match.winnerToSlot = m.winnerToSlot
+        } else {
+          feeder.match.loserToKey = m.winnerToKey
+          feeder.match.loserToSlot = m.winnerToSlot
+        }
+      }
+      removed.add(m.key)
       changed = true
-      if (m.winnerToKey) {
-        const dest = matches.get(m.winnerToKey)!
-        if (m.winnerToSlot === 'A') dest.participantAId = advancing
-        else dest.participantBId = advancing
-        routedInto.delete(`${m.winnerToKey}:${m.winnerToSlot}`)
-      }
-      // a bye has no loser: close that downstream slot
-      if (m.loserToKey) {
-        routedInto.delete(`${m.loserToKey}:${m.loserToSlot}`)
-      }
     }
   }
+
+  return [...matchMap.values()].filter((m) => !removed.has(m.key))
 }

@@ -33,6 +33,15 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 )
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function showApiError(err: any) {
+  const msg =
+    (typeof err?.data === 'function' && err.data()) ||
+    (typeof err?.error === 'function' && err.error()) ||
+    'Something went wrong'
+  window.alert(typeof msg === 'string' ? msg : JSON.stringify(msg))
+}
+
 const useFinishGroupPhase = (tournamentId: number, onSuccess: () => void) =>
   useCallback(() => {
     if (
@@ -40,9 +49,7 @@ const useFinishGroupPhase = (tournamentId: number, onSuccess: () => void) =>
         'Are you sure you want to end the group phase for this tournament? This cannot be undone.'
       )
     ) {
-      api.Tournament.closeGroupStage({ tournamentId })
-        .then(onSuccess)
-        .catch(() => window.alert('ERROR'))
+      api.Tournament.closeGroupStage({ tournamentId }).then(onSuccess).catch(showApiError)
     }
   }, [tournamentId, onSuccess])
 
@@ -51,18 +58,14 @@ const useStartBracketPhase = (tournamentId: number, onSuccess: () => void) =>
     if (
       window.confirm('Are you sure you want to lock the decklists and start the bracket phase?')
     ) {
-      api.Tournament.startBracketStage({ tournamentId })
-        .then(onSuccess)
-        .catch(() => window.alert('ERROR'))
+      api.Tournament.startBracketStage({ tournamentId }).then(onSuccess).catch(showApiError)
     }
   }, [tournamentId, onSuccess])
 
 const useFinishBracketPhase = (tournamentId: number, onSuccess: () => void) =>
   useCallback(() => {
     if (window.confirm('Are you sure you want to finish this tournament? This cannot be undone.')) {
-      api.Tournament.closeBracketStage({ tournamentId })
-        .then(onSuccess)
-        .catch(() => window.alert('ERROR'))
+      api.Tournament.closeBracketStage({ tournamentId }).then(onSuccess).catch(showApiError)
     }
   }, [tournamentId, onSuccess])
 

@@ -1,1 +1,1 @@
-export { processBrackets } from './private/processBrackets'
+export { processBrackets, computeCut } from './private/processBrackets'
