@@ -7,10 +7,12 @@ export function TournamentPodPanel({
   pods,
   participants,
   users,
+  onUpdate,
 }: {
   pods: PodResult[]
   participants: RankedParticipant[]
   users: UserRowData[]
+  onUpdate?: () => void
 }) {
   const prepedPods = useMemo(
     () =>
@@ -22,12 +24,13 @@ export function TournamentPodPanel({
       })),
     [pods, participants]
   )
+  const allPods = useMemo(() => pods.map((p) => ({ id: p.id, name: p.name })), [pods])
   return (
     <Container>
       <Grid container spacing={2}>
         {prepedPods.map((pod) => (
           <Grid item xs={12} md={6} key={pod.id}>
-            <PodTable pod={pod} podLink users={users} />
+            <PodTable pod={pod} podLink users={users} allPods={allPods} onUpdate={onUpdate} />
           </Grid>
         ))}
       </Grid>

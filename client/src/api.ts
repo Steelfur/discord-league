@@ -49,6 +49,8 @@ export const api = forge({
     Pod: {
       findById: { method: 'GET', path: '/pod/{podId}' },
       createParticipant: { method: 'POST', path: '/pod/{podId}/participant' },
+      rename: { method: 'PATCH', path: '/pod/{podId}' },
+      moveParticipant: { method: 'POST', path: '/pod/{podId}/move-participant' },
     },
     Match: {
       updateReport: { method: 'PUT', path: '/match/{matchId}/report' },
@@ -56,6 +58,7 @@ export const api = forge({
     },
     BracketMatch: {
       report: { method: 'PUT', path: '/bracket-match/{matchId}' },
+      clear: { method: 'DELETE', path: '/bracket-match/{matchId}' },
     },
     Tournament: {
       findAll: { method: 'GET', path: '/tournament' },
@@ -77,6 +80,9 @@ export const api = forge({
       startBracketStage: { method: 'POST', path: '/tournament/{tournamentId}/start-bracket-stage' },
       closeBracketStage: { method: 'POST', path: '/tournament/{tournamentId}/close-bracket-stage' },
       startGroupStage: { method: 'POST', path: '/tournament/{tournamentId}/start-group-stage' },
+      setStatus: { method: 'PATCH', path: '/tournament/{tournamentId}/status' },
+      regeneratePods: { method: 'POST', path: '/tournament/{tournamentId}/regenerate-pods' },
+      reseedBracket: { method: 'POST', path: '/tournament/{tournamentId}/reseed-bracket' },
     },
     User: {
       findAll: { method: 'GET', path: '/user' },

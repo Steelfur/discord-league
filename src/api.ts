@@ -17,6 +17,8 @@ import * as closeGroupStage from './handlers/closeGroupStage'
 import * as startBracketStage from './handlers/startBracketStage'
 import * as closeBracketStage from './handlers/closeBracketStage'
 import * as reportBracketMatch from './handlers/reportBracketMatch'
+import * as adminOverrides from './handlers/adminOverrides'
+import * as podAdmin from './handlers/podAdmin'
 import * as getAllTournaments from './handlers/getAllTournaments'
 import * as getAllUsers from './handlers/getAllUsers'
 import * as getUser from './handlers/getUser'
@@ -144,6 +146,43 @@ export default (): AsyncRouterInstance => {
     authenticate,
     validate(reportBracketMatch.schema),
     reportBracketMatch.handler
+  )
+  api.delete('/bracket-match/:matchId', authenticate, onlyAdmin, reportBracketMatch.clearHandler)
+
+  // --- admin overrides ---
+  api.patch(
+    '/tournament/:tournamentId/status',
+    authenticate,
+    onlyAdmin,
+    validate(adminOverrides.setStatusSchema),
+    adminOverrides.setStatusHandler
+  )
+  api.post(
+    '/tournament/:tournamentId/regenerate-pods',
+    authenticate,
+    onlyAdmin,
+    validate(adminOverrides.regeneratePodsSchema),
+    adminOverrides.regeneratePodsHandler
+  )
+  api.post(
+    '/tournament/:tournamentId/reseed-bracket',
+    authenticate,
+    onlyAdmin,
+    adminOverrides.reseedBracketHandler
+  )
+  api.patch(
+    '/pod/:podId',
+    authenticate,
+    onlyAdmin,
+    validate(podAdmin.renameSchema),
+    podAdmin.renameHandler
+  )
+  api.post(
+    '/pod/:podId/move-participant',
+    authenticate,
+    onlyAdmin,
+    validate(podAdmin.moveSchema),
+    podAdmin.moveParticipantHandler
   )
 
   api.post('/participant/:participantId/drop', authenticate, dropParticipant.handler)

@@ -4,6 +4,7 @@ export {
   fetchBracketMatchById,
   createBracketMatches,
   applyBracketResult,
+  clearBracketResult,
 } from './private/bracket'
 
 export {
@@ -63,6 +64,7 @@ export {
   TournamentPodRecord,
   createTournamentPod,
   updatePod,
+  moveParticipantToPod,
   fetchPod,
   fetchTournamentPods,
 } from './private/pod'
@@ -72,6 +74,8 @@ export { connectMatchToPod } from './private/podsMatches'
 export {
   createTournament,
   deleteTournament,
+  deleteTournamentDeep,
+  deleteTournamentPodsAndMatches,
   fetchTournament,
   fetchTournaments,
   fetchTournamentsForUser,

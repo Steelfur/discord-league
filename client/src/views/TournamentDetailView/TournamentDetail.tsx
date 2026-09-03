@@ -153,7 +153,12 @@ export function TournamentDetail({
           )}
 
           {activeTab === 'pods' && (
-            <TournamentPodPanel pods={pods} participants={participants} users={users} />
+            <TournamentPodPanel
+              pods={pods}
+              participants={participants}
+              users={users}
+              onUpdate={onTournamentUpdate}
+            />
           )}
 
           {activeTab === 'statistics' && (

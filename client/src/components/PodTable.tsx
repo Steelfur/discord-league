@@ -1,17 +1,20 @@
 import { MatchData, ParticipantWithUserData, PodResult, UserRowData } from '@dl/api'
-import { Dispatch, useCallback, useContext, useReducer } from 'react'
+import { Dispatch, useCallback, useContext, useReducer, useState } from 'react'
 import {
   Button,
   Chip,
   createStyles,
   makeStyles,
+  MenuItem,
   Paper,
+  Select,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
 } from '@material-ui/core'
 import { useHistory } from 'react-router-dom'
@@ -118,12 +121,36 @@ export function PodTable(props: {
   onDrop?: (participant: ParticipantWithUserData) => void
   podLink?: boolean
   detailed?: boolean
+  allPods?: { id: number; name: string }[]
+  onUpdate?: () => void
 }) {
   const classes = useStyles()
   const history = useHistory()
   const currentUser = useContext(UserContext)
   const [state, dispatch] = useReducer(reducer, initialState)
   const createParticipantInPod = useCreateParticipantInPod(props.pod.id, dispatch)
+  const admin = isAdmin(currentUser)
+  const [nameDraft, setNameDraft] = useState(props.pod.name)
+
+  const renamePod = () => {
+    const next = nameDraft.trim()
+    if (!next || next === props.pod.name) {
+      setNameDraft(props.pod.name)
+      return
+    }
+    api.Pod.rename({ podId: props.pod.id, body: { name: next } })
+      .then(() => props.onUpdate?.())
+      .catch(() => {
+        setNameDraft(props.pod.name)
+        dispatch({ type: 'FAILURE', payload: 'Could not rename the pod' })
+      })
+  }
+
+  const moveParticipant = (participantId: number, targetPodId: number) => {
+    api.Pod.moveParticipant({ podId: targetPodId, body: { participantId } })
+      .then(() => props.onUpdate?.())
+      .catch(() => dispatch({ type: 'FAILURE', payload: 'Could not move the player' }))
+  }
 
   const sortedParticipants = props.pod.participants.sort((a, b) => a.position - b.position)
   const sortedMatches = props.pod.matches
@@ -158,8 +185,20 @@ export function PodTable(props: {
         <TableHead>
           <TableRow style={{ backgroundColor: colors[props.pod.id % colors.length] }}>
             <TableCell colSpan={6}>
-              <Typography variant="h6">
-                {props.pod.name}
+              <Typography variant="h6" component="div" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {admin && props.onUpdate ? (
+                  <TextField
+                    value={nameDraft}
+                    onChange={(e) => setNameDraft(e.target.value)}
+                    onBlur={renamePod}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                    }}
+                    InputProps={{ style: { fontSize: '1.25rem', fontWeight: 500 } }}
+                  />
+                ) : (
+                  props.pod.name
+                )}
                 {props.podLink && (
                   <Button onClick={() => history.push(`/pod/${props.pod.id}`)}>
                     <ExitToAppIcon /> Details
@@ -179,6 +218,9 @@ export function PodTable(props: {
               <TableCell className={classes.sticky} width="20%">
                 First Win
               </TableCell>
+            )}
+            {admin && props.allPods && props.allPods.length > 1 && (
+              <TableCell className={classes.sticky}>Move</TableCell>
             )}
             {props.onDrop && <TableCell className={classes.sticky} width="5%" />}
           </TableRow>
@@ -210,6 +252,28 @@ export function PodTable(props: {
               </TableCell>
               {props.detailed && (
                 <TableCell className={classes.sticky}>{getFirstWinDate(participant.id)}</TableCell>
+              )}
+              {admin && props.allPods && props.allPods.length > 1 && (
+                <TableCell className={classes.sticky}>
+                  <Select
+                    value=""
+                    displayEmpty
+                    onChange={(e) =>
+                      moveParticipant(participant.id, e.target.value as number)
+                    }
+                  >
+                    <MenuItem value="" disabled>
+                      Move to…
+                    </MenuItem>
+                    {props.allPods
+                      .filter((p) => p.id !== props.pod.id)
+                      .map((p) => (
+                        <MenuItem key={p.id} value={p.id}>
+                          {p.name}
+                        </MenuItem>
+                      ))}
+                  </Select>
+                </TableCell>
               )}
               {props.onDrop && (
                 <TableCell className={classes.sticky} style={{ width: 60, textAlign: 'center' }}>

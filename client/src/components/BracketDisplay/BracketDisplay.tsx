@@ -20,8 +20,9 @@ const MatchCard: FC<{
   match: BracketMatch
   participants: RankedParticipant[]
   canReport: CanReport
+  isAdmin: boolean
   onReported: () => void
-}> = ({ match, participants, canReport, onReported }) => {
+}> = ({ match, participants, canReport, isAdmin, onReported }) => {
   const [busy, setBusy] = useState(false)
   const bothPresent = match.participantAId != null && match.participantBId != null
   const reportable = canReport(match) && bothPresent
@@ -34,6 +35,19 @@ const MatchCard: FC<{
       onReported()
     } catch {
       window.alert('Could not report this match')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const clear = async () => {
+    if (!window.confirm('Clear this result? Anything downstream of it is reset too.')) return
+    setBusy(true)
+    try {
+      await api.BracketMatch.clear({ matchId: match.id })
+      onReported()
+    } catch {
+      window.alert('Could not clear this match')
     } finally {
       setBusy(false)
     }
@@ -71,6 +85,20 @@ const MatchCard: FC<{
     >
       {row(match.participantAId, match.seedA, true)}
       {row(match.participantBId, match.seedB, false)}
+      {isAdmin && match.winnerId != null && (
+        <div
+          onClick={busy ? undefined : clear}
+          style={{
+            padding: '2px 8px',
+            fontSize: 11,
+            color: '#b71c1c',
+            cursor: busy ? 'default' : 'pointer',
+            borderTop: '1px solid rgba(0,0,0,0.12)',
+          }}
+        >
+          clear result
+        </div>
+      )}
     </div>
   )
 }
@@ -81,8 +109,9 @@ const Half: FC<{
   bracketMatches: BracketMatch[]
   participants: RankedParticipant[]
   canReport: CanReport
+  isAdmin: boolean
   onReported: () => void
-}> = ({ heading, side, bracketMatches, participants, canReport, onReported }) => {
+}> = ({ heading, side, bracketMatches, participants, canReport, isAdmin, onReported }) => {
   const rounds = useMemo(
     () =>
       Array.from(
@@ -119,6 +148,7 @@ const Half: FC<{
                     match={m}
                     participants={participants}
                     canReport={canReport}
+                    isAdmin={isAdmin}
                     onReported={onReported}
                   />
                 ))}
@@ -173,6 +203,7 @@ export const BracketDisplay: FC<{
         bracketMatches={bracketMatches}
         participants={participants}
         canReport={canReport}
+        isAdmin={isAdmin}
         onReported={onReported}
       />
       <Half
@@ -181,6 +212,7 @@ export const BracketDisplay: FC<{
         bracketMatches={bracketMatches}
         participants={participants}
         canReport={canReport}
+        isAdmin={isAdmin}
         onReported={onReported}
       />
       {grandFinal && (
@@ -191,6 +223,7 @@ export const BracketDisplay: FC<{
               match={grandFinal}
               participants={participants}
               canReport={canReport}
+              isAdmin={isAdmin}
               onReported={onReported}
             />
           </div>

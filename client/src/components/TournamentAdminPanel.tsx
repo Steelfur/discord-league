@@ -1,9 +1,20 @@
 import { Tournament, Tournament$startGroupStage } from '@dl/api'
-import { Typography, Button, Divider, makeStyles, Theme, createStyles } from '@material-ui/core'
+import {
+  Typography,
+  Button,
+  Divider,
+  makeStyles,
+  Theme,
+  createStyles,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+} from '@material-ui/core'
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever'
 import EditIcon from '@material-ui/icons/Edit'
 import PlayArrowIcon from '@material-ui/icons/PlayArrow'
-import { useReducer, useContext } from 'react'
+import { useReducer, useContext, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { UserContext } from '../App'
@@ -14,17 +25,20 @@ import { StartTournamentModal } from '../modals/StartTournamentModal'
 import { DeletionDialog } from './DeletionDialog'
 import { MessageSnackBar } from './MessageSnackBar'
 
+const STATUS_LABELS: Record<Tournament['statusId'], string> = {
+  upcoming: 'Upcoming',
+  group: 'Group stage',
+  endOfGroup: 'End of group stage',
+  bracket: 'Bracket stage',
+  finished: 'Finished',
+}
+
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    container: {
-      minHeight: theme.spacing(10),
-    },
-    paddedContainer: {
-      padding: theme.spacing(2),
-    },
-    button: {
-      margin: theme.spacing(1),
-    },
+    container: { minHeight: theme.spacing(10), paddingBottom: theme.spacing(2) },
+    row: { padding: theme.spacing(1, 2), display: 'flex', flexWrap: 'wrap', gap: theme.spacing(1), alignItems: 'center' },
+    button: { margin: theme.spacing(0.5) },
+    danger: { marginTop: theme.spacing(2) },
   })
 )
 
@@ -35,6 +49,7 @@ interface State {
   snackBarMessage: string
   editModalOpen: boolean
   startTournamentModalOpen: boolean
+  startModalMode: 'start' | 'regenerate'
 }
 
 const initialState = (): State => ({
@@ -44,13 +59,14 @@ const initialState = (): State => ({
   requestError: false,
   editModalOpen: false,
   startTournamentModalOpen: false,
+  startModalMode: 'start',
 })
 type Action =
   | { type: 'OPEN_DIALOG' }
   | { type: 'CLOSE_DIALOG' }
   | { type: 'OPEN_EDIT_MODAL' }
   | { type: 'CLOSE_EDIT_MODAL' }
-  | { type: 'OPEN_START_MODAL' }
+  | { type: 'OPEN_START_MODAL'; mode: 'start' | 'regenerate' }
   | { type: 'CLOSE_START_MODAL' }
   | { type: 'UPDATE_SUCCESS'; payload: string }
   | { type: 'REQUEST_ERROR'; payload: string }
@@ -66,7 +82,7 @@ function reducer(state: State, action: Action): State {
     case 'CLOSE_EDIT_MODAL':
       return { ...state, editModalOpen: false }
     case 'OPEN_START_MODAL':
-      return { ...state, startTournamentModalOpen: true }
+      return { ...state, startTournamentModalOpen: true, startModalMode: action.mode }
     case 'CLOSE_START_MODAL':
       return { ...state, startTournamentModalOpen: false }
     case 'UPDATE_SUCCESS':
@@ -79,17 +95,9 @@ function reducer(state: State, action: Action): State {
         snackBarOpen: true,
       }
     case 'REQUEST_ERROR':
-      return {
-        ...state,
-        snackBarOpen: true,
-        snackBarMessage: action.payload,
-        requestError: true,
-      }
+      return { ...state, snackBarOpen: true, snackBarMessage: action.payload, requestError: true }
     case 'CLOSE_SNACKBAR':
-      return {
-        ...state,
-        snackBarOpen: false,
-      }
+      return { ...state, snackBarOpen: false }
   }
 }
 
@@ -101,103 +109,163 @@ export function TournamentAdminPanel(props: {
   const user = useContext(UserContext)
   const history = useHistory()
   const [state, dispatch] = useReducer(reducer, undefined, initialState)
+  const [overrideStatus, setOverrideStatus] = useState<Tournament['statusId']>(
+    props.tournament.statusId
+  )
+
+  const id = props.tournament.id
+  const ok = (msg: string) => {
+    props.onTournamentUpdate()
+    dispatch({ type: 'UPDATE_SUCCESS', payload: msg })
+  }
+  const fail = (msg: string) => dispatch({ type: 'REQUEST_ERROR', payload: msg })
 
   function deleteTournament() {
-    api.Tournament.deleteById({ tournamentId: props.tournament.id })
+    api.Tournament.deleteById({ tournamentId: id })
       .then(() => history.push('/tournaments'))
-      .catch(() =>
-        dispatch({
-          type: 'REQUEST_ERROR',
-          payload: 'The tournament could not be deleted',
-        })
-      )
-  }
-
-  function updateTournament(tournament: Tournament) {
-    api.Tournament.updateById({ tournamentId: props.tournament.id, body: tournament })
-      .then(() => {
-        props.onTournamentUpdate()
-        dispatch({ type: 'UPDATE_SUCCESS', payload: 'The tournament was updated successfully!' })
-      })
-      .catch(() =>
-        dispatch({
-          type: 'REQUEST_ERROR',
-          payload: 'The tournament could not be updated',
-        })
-      )
+      .catch(() => fail('The tournament could not be deleted'))
   }
 
   function updateTournamentInfo(name: string, startDate: Date, description?: string) {
-    updateTournament({
-      id: props.tournament.id,
-      name: name,
-      startDate: startDate.toJSON(),
-      description: description,
-      statusId: props.tournament.statusId,
-      typeId: props.tournament.typeId,
+    api.Tournament.updateById({
+      tournamentId: id,
+      body: {
+        id,
+        name,
+        startDate: startDate.toJSON(),
+        description,
+        statusId: props.tournament.statusId,
+        typeId: props.tournament.typeId,
+      },
     })
+      .then(() => ok('The tournament was updated.'))
+      .catch(() => fail('The tournament could not be updated'))
   }
 
-  function startTournament(deadline: Date) {
-    const body: Tournament$startGroupStage['request']['body'] = {
-      deadline: new Date(
-        Date.UTC(deadline.getFullYear(), deadline.getMonth(), deadline.getDate())
-      ).toJSON(),
-    }
-    api.Tournament.startGroupStage({ tournamentId: props.tournament.id, body })
-      .then(() => {
-        props.onTournamentUpdate()
-        dispatch({ type: 'UPDATE_SUCCESS', payload: 'The tournament was updated successfully!' })
-      })
-      .catch(() =>
-        dispatch({
-          type: 'REQUEST_ERROR',
-          payload: 'Pods for this tournament could not be created',
-        })
+  function toUtcDeadline(deadline: Date) {
+    return new Date(
+      Date.UTC(deadline.getFullYear(), deadline.getMonth(), deadline.getDate())
+    ).toJSON()
+  }
+
+  function onStartModalSubmit(deadline: Date) {
+    const body: Tournament$startGroupStage['request']['body'] = { deadline: toUtcDeadline(deadline) }
+    const call =
+      state.startModalMode === 'regenerate'
+        ? api.Tournament.regeneratePods({ tournamentId: id, body })
+        : api.Tournament.startGroupStage({ tournamentId: id, body })
+    call
+      .then(() => ok(state.startModalMode === 'regenerate' ? 'Pods regenerated.' : 'Tournament started.'))
+      .catch(() => fail('Could not create pods for this tournament'))
+  }
+
+  function applyStatusOverride() {
+    if (
+      !window.confirm(
+        `Force this tournament to "${STATUS_LABELS[overrideStatus]}"? This does not undo data from other stages.`
       )
+    )
+      return
+    api.Tournament.setStatus({ tournamentId: id, body: { statusId: overrideStatus } })
+      .then(() => ok('Stage changed.'))
+      .catch(() => fail('Could not change the stage'))
   }
 
-  return user && isAdmin(user) ? (
+  function reseedBracket() {
+    if (!window.confirm('Rebuild the bracket from the current group standings? Reported bracket results are lost.'))
+      return
+    api.Tournament.reseedBracket({ tournamentId: id })
+      .then(() => ok('Bracket re-seeded.'))
+      .catch(() => fail('Could not re-seed the bracket'))
+  }
+
+  if (!user || !isAdmin(user)) return <div />
+
+  return (
     <div className={classes.container}>
       <Divider />
-      <Typography variant="h6" align="center">
+      <Typography variant="h6" align="center" style={{ marginTop: 8 }}>
         Admin Features
       </Typography>
 
-      {props.tournament.statusId === 'upcoming' && (
-        <div className={classes.paddedContainer}>
-          <Button
-            color="primary"
-            startIcon={<EditIcon />}
-            aria-label="edit"
-            variant="contained"
-            className={classes.button}
-            onClick={() => dispatch({ type: 'OPEN_EDIT_MODAL' })}
-          >
-            Edit Tournament
-          </Button>
+      <div className={classes.row}>
+        <Button
+          color="primary"
+          startIcon={<EditIcon />}
+          variant="contained"
+          className={classes.button}
+          onClick={() => dispatch({ type: 'OPEN_EDIT_MODAL' })}
+        >
+          Edit Tournament
+        </Button>
+        {props.tournament.statusId === 'upcoming' && (
           <Button
             color="primary"
             startIcon={<PlayArrowIcon />}
-            aria-label="start"
             variant="contained"
             className={classes.button}
-            onClick={() => dispatch({ type: 'OPEN_START_MODAL' })}
+            onClick={() => dispatch({ type: 'OPEN_START_MODAL', mode: 'start' })}
           >
             Start Tournament
           </Button>
+        )}
+        {props.tournament.statusId === 'group' && (
           <Button
             color="primary"
-            startIcon={<DeleteForeverIcon />}
-            aria-label="delete"
             variant="contained"
             className={classes.button}
-            onClick={() => dispatch({ type: 'OPEN_DIALOG' })}
+            onClick={() => dispatch({ type: 'OPEN_START_MODAL', mode: 'regenerate' })}
           >
-            Delete Tournament
+            Regenerate Pods
           </Button>
-        </div>
-      )}
+        )}
+        {props.tournament.statusId === 'bracket' && (
+          <Button
+            color="primary"
+            variant="contained"
+            className={classes.button}
+            onClick={reseedBracket}
+          >
+            Re-seed Bracket
+          </Button>
+        )}
+      </div>
+
+      <div className={classes.row}>
+        <FormControl style={{ minWidth: 200 }}>
+          <InputLabel id="stage-override">Force stage</InputLabel>
+          <Select
+            labelId="stage-override"
+            value={overrideStatus}
+            onChange={(e) => setOverrideStatus(e.target.value as Tournament['statusId'])}
+          >
+            {(Object.keys(STATUS_LABELS) as Tournament['statusId'][]).map((s) => (
+              <MenuItem key={s} value={s}>
+                {STATUS_LABELS[s]}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <Button
+          variant="outlined"
+          disabled={overrideStatus === props.tournament.statusId}
+          onClick={applyStatusOverride}
+        >
+          Apply stage
+        </Button>
+      </div>
+
+      <div className={`${classes.row} ${classes.danger}`}>
+        <Button
+          color="secondary"
+          startIcon={<DeleteForeverIcon />}
+          variant="contained"
+          onClick={() => dispatch({ type: 'OPEN_DIALOG' })}
+        >
+          Delete Tournament
+        </Button>
+      </div>
+
       <DeletionDialog
         entity="tournament"
         dialogOpen={state.dialogOpen}
@@ -207,7 +275,7 @@ export function TournamentAdminPanel(props: {
       <StartTournamentModal
         modalOpen={state.startTournamentModalOpen}
         onClose={() => dispatch({ type: 'CLOSE_START_MODAL' })}
-        onSubmit={startTournament}
+        onSubmit={onStartModalSubmit}
       />
       <EditTournamentModal
         modalOpen={state.editModalOpen}
@@ -227,7 +295,5 @@ export function TournamentAdminPanel(props: {
         message={state.snackBarMessage}
       />
     </div>
-  ) : (
-    <div />
   )
 }

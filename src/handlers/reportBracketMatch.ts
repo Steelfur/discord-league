@@ -46,3 +46,20 @@ export async function handler(
     res.status(400).send()
   }
 }
+
+export async function clearHandler(
+  req: ValidatedRequest<Record<string, never>, BracketMatch$report['request']['params']>,
+  res: Response
+): Promise<void> {
+  const matchId = parseInt(req.params.matchId, 10)
+  if (isNaN(matchId)) {
+    res.sendStatus(400)
+    return
+  }
+  try {
+    await db.clearBracketResult(matchId)
+    res.sendStatus(204)
+  } catch (error) {
+    res.sendStatus(400)
+  }
+}

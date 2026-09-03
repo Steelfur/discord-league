@@ -17,17 +17,9 @@ export async function handler(
     res.sendStatus(404)
     return
   }
-  if (tournament.statusId !== 'upcoming') {
-    res.sendStatus(405)
-    return
-  }
 
-  const participants = await db.fetchParticipants(tournamentId)
-  if (participants.length > 0) {
-    res.sendStatus(405)
-    return
-  }
-
-  await db.deleteTournament(tournamentId)
+  // Admin-only route: delete the tournament and everything attached to it,
+  // whatever stage it is in.
+  await db.deleteTournamentDeep(tournamentId)
   res.sendStatus(204)
 }

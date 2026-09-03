@@ -29,6 +29,44 @@ export async function deleteTournament(id: number): Promise<number> {
   return pg(TABLE).where('id', id).del()
 }
 
+/** Delete a tournament and everything hanging off it, in dependency order. */
+export async function deleteTournamentDeep(id: number): Promise<void> {
+  await pg.transaction(async (trx) => {
+    const participantIds = (await trx('participants').where({ tournamentId: id }).select('id')).map(
+      (r) => r.id
+    )
+    const podIds = (await trx('pods').where({ tournamentId: id }).select('id')).map((r) => r.id)
+    const matchIds = podIds.length
+      ? (await trx('pods_matches').whereIn('podId', podIds).select('matchId')).map((r) => r.matchId)
+      : []
+
+    await trx('bracket_matches').where({ tournamentId: id }).del()
+    if (participantIds.length) {
+      await trx('decklists').whereIn('participantId', participantIds).del()
+      await trx('feedbacks').whereIn('participantId', participantIds).del()
+    }
+    if (podIds.length) await trx('pods_matches').whereIn('podId', podIds).del()
+    if (matchIds.length) await trx('matches').whereIn('id', matchIds).del()
+    if (podIds.length) await trx('pods').whereIn('id', podIds).del()
+    if (participantIds.length) await trx('participants').whereIn('id', participantIds).del()
+    await trx(TABLE).where({ id }).del()
+  })
+}
+
+/** Delete just the pods + pod matches for a tournament (used before regenerating). */
+export async function deleteTournamentPodsAndMatches(id: number): Promise<void> {
+  await pg.transaction(async (trx) => {
+    const podIds = (await trx('pods').where({ tournamentId: id }).select('id')).map((r) => r.id)
+    if (!podIds.length) return
+    const matchIds = (await trx('pods_matches').whereIn('podId', podIds).select('matchId')).map(
+      (r) => r.matchId
+    )
+    await trx('pods_matches').whereIn('podId', podIds).del()
+    if (matchIds.length) await trx('matches').whereIn('id', matchIds).del()
+    await trx('pods').whereIn('id', podIds).del()
+  })
+}
+
 export async function updateTournament(
   id: number,
   tournament: Partial<Omit<TournamentRecord, 'id' | 'createdAt' | 'updatedAt'>>
