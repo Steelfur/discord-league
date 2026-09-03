@@ -36,3 +36,4 @@ client/build
 
 coverage
 report.*.json
+*.sql
