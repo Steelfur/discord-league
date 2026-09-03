@@ -20,6 +20,7 @@ import * as reportBracketMatch from './handlers/reportBracketMatch'
 import * as adminOverrides from './handlers/adminOverrides'
 import * as podAdmin from './handlers/podAdmin'
 import * as seedTestTournament from './handlers/seedTestTournament'
+import * as backup from './handlers/backup'
 import * as getAllTournaments from './handlers/getAllTournaments'
 import * as getAllUsers from './handlers/getAllUsers'
 import * as getUser from './handlers/getUser'
@@ -102,6 +103,7 @@ export default (): AsyncRouterInstance => {
     seedTestTournament.handler
   )
   api.post('/tournament/purge-test-data', authenticate, onlyAdmin, seedTestTournament.purgeHandler)
+  api.get('/admin/backup', authenticate, onlyAdmin, backup.handler)
   api.get('/tournament/:tournamentId', getTournament.handler)
   api.get('/tournament/:tournamentId/statistics', getTournamentStatistics.handler)
   api.put(

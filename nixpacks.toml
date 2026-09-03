@@ -1,0 +1,5 @@
+# "..." expands to the packages Nixpacks auto-detects for the Node app.
+# postgresql_16 is added so `pg_dump` (matching the Railway Postgres major
+# version) is available at runtime for the admin backup download.
+[phases.setup]
+nixPkgs = ["...", "postgresql_16"]

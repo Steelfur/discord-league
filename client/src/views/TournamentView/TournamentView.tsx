@@ -3,6 +3,7 @@ import AddIcon from '@material-ui/icons/Add'
 import { Dispatch, useCallback, useReducer } from 'react'
 
 import { api } from '../../api'
+import { getToken } from '../../utils/auth'
 import { useConfirm } from '../../components/ConfirmProvider'
 import { useIsAdmin } from '../../hooks/useIsAdmin'
 import { useTournaments } from '../../hooks/useTournaments'
@@ -124,6 +125,28 @@ export function TournamentView() {
       })
   }
 
+  async function downloadBackup() {
+    try {
+      const res = await fetch('/api/admin/backup', {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `fab-league-${new Date().toISOString().slice(0, 10)}.sql`
+      a.click()
+      URL.revokeObjectURL(url)
+      dispatch({ type: 'SUCCESS', payload: 'Backup downloaded.' })
+    } catch (e) {
+      dispatch({
+        type: 'FAILURE',
+        payload: `Backup failed: ${e instanceof Error ? e.message : 'unknown error'}`,
+      })
+    }
+  }
+
   async function purgeTestData() {
     if (
       !(await confirm({
@@ -174,6 +197,9 @@ export function TournamentView() {
       />
       {isAdmin && (
         <div className={classes.fab} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Fab color="default" size="medium" variant="extended" onClick={downloadBackup}>
+            ⬇️ Backup
+          </Fab>
           <Fab color="default" size="medium" variant="extended" onClick={purgeTestData}>
             🧹 Purge Test Data
           </Fab>
