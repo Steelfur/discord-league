@@ -3,6 +3,7 @@ import AddIcon from '@material-ui/icons/Add'
 import { Dispatch, useCallback, useReducer } from 'react'
 
 import { api } from '../../api'
+import { useConfirm } from '../../components/ConfirmProvider'
 import { useIsAdmin } from '../../hooks/useIsAdmin'
 import { useTournaments } from '../../hooks/useTournaments'
 import { Loading } from '../../components/Loading'
@@ -98,12 +99,15 @@ export function TournamentView() {
   const isAdmin = useIsAdmin()
   const [tournaments, refetchTournaments] = useTournaments()
   const createTournament = useCreateTournament(dispatch, refetchTournaments)
+  const confirm = useConfirm()
 
-  function seedTestTournament() {
+  async function seedTestTournament() {
     if (
-      !window.confirm(
-        'Generate a test tournament with 18 fake players, start the group stage, and fill in random results?'
-      )
+      !(await confirm({
+        title: 'Generate test tournament',
+        body: '18 fake players, group stage started, random results filled in. Safe to delete after.',
+        confirmLabel: 'Generate',
+      }))
     )
       return
     api.Tournament.seedTest({ body: { players: 18, start: true, withResults: true } })

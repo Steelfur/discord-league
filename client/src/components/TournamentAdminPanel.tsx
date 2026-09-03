@@ -19,6 +19,7 @@ import { useHistory } from 'react-router-dom'
 
 import { UserContext } from '../App'
 import { api } from '../api'
+import { useConfirm } from './ConfirmProvider'
 import { isAdmin } from '../hooks/useUsers'
 import { EditTournamentModal } from '../modals/EditTournamentModal'
 import { StartTournamentModal } from '../modals/StartTournamentModal'
@@ -106,6 +107,7 @@ export function TournamentAdminPanel(props: {
   onTournamentUpdate: () => void
 }) {
   const classes = useStyles()
+  const confirm = useConfirm()
   const user = useContext(UserContext)
   const history = useHistory()
   const [state, dispatch] = useReducer(reducer, undefined, initialState)
@@ -159,11 +161,13 @@ export function TournamentAdminPanel(props: {
       .catch(() => fail('Could not create pods for this tournament'))
   }
 
-  function applyStatusOverride() {
+  async function applyStatusOverride() {
     if (
-      !window.confirm(
-        `Force this tournament to "${STATUS_LABELS[overrideStatus]}"? This does not undo data from other stages.`
-      )
+      !(await confirm({
+        title: 'Force stage',
+        body: `Force this tournament to "${STATUS_LABELS[overrideStatus]}"? This does not undo data from other stages.`,
+        confirmLabel: 'Force',
+      }))
     )
       return
     api.Tournament.setStatus({ tournamentId: id, body: { statusId: overrideStatus } })
@@ -171,8 +175,15 @@ export function TournamentAdminPanel(props: {
       .catch(() => fail('Could not change the stage'))
   }
 
-  function reseedBracket() {
-    if (!window.confirm('Rebuild the bracket from the current group standings? Reported bracket results are lost.'))
+  async function reseedBracket() {
+    if (
+      !(await confirm({
+        title: 'Re-seed bracket',
+        body: 'Rebuild the bracket from the current group standings? Reported bracket results are lost.',
+        confirmLabel: 'Re-seed',
+        destructive: true,
+      }))
+    )
       return
     api.Tournament.reseedBracket({ tournamentId: id })
       .then(() => ok('Bracket re-seeded.'))

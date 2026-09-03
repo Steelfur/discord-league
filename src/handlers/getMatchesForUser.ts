@@ -45,10 +45,27 @@ export async function handler(
         { matchesDone: [], matchesToPlay: [] }
       )
 
+      // bracket matches waiting on this player
+      let bracketMatchesToPlay = 0
+      if (tournament.statusId === 'bracket') {
+        const registration = await db.findRegistration(userId, tournament.id)
+        if (registration) {
+          const bracket = await db.fetchBracketMatches(tournament.id)
+          bracketMatchesToPlay = bracket.filter(
+            (m) =>
+              m.winnerId == null &&
+              m.participantAId != null &&
+              m.participantBId != null &&
+              (m.participantAId === registration.id || m.participantBId === registration.id)
+          ).length
+        }
+      }
+
       return {
         tournament: { ...tournament, startDate: tournament.startDate.toJSON() },
         matchesDone,
         matchesToPlay,
+        bracketMatchesToPlay,
       }
     })
   )

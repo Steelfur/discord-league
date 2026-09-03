@@ -5,6 +5,7 @@ import { createContext } from 'react'
 import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom'
 
 import { NavBar } from './components/NavBar'
+import { ConfirmProvider } from './components/ConfirmProvider'
 import { ReferenceDataProvider } from './hooks/useReferenceData'
 import { useCurrentUser } from './hooks/useCurrentUser'
 import { captureToken } from './utils/auth'
@@ -38,6 +39,7 @@ export default function App(): JSX.Element {
     <ThemeProvider theme={theme}>
       <UserContext.Provider value={user.data}>
         <ReferenceDataProvider>
+          <ConfirmProvider>
           <BrowserRouter>
             <NavBar />
             <br />
@@ -66,6 +68,7 @@ export default function App(): JSX.Element {
               <Redirect from="/" exact to="/tournaments" />
             </Switch>
           </BrowserRouter>
+          </ConfirmProvider>
         </ReferenceDataProvider>
       </UserContext.Provider>
     </ThemeProvider>

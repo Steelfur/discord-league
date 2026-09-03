@@ -5,11 +5,13 @@ import {
   AccordionDetails,
   AccordionSummary,
   createStyles,
+  Link,
   makeStyles,
   Theme,
 } from '@material-ui/core'
 import Typography from '@material-ui/core/Typography'
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore'
+import { Link as RouterLink } from 'react-router-dom'
 
 import { useMatchesForUser } from '../../hooks/useMatchesForUser'
 import { Loading } from '../../components/Loading'
@@ -44,26 +46,42 @@ export function MyMatches(props: { user: User }): JSX.Element {
 
   return (
     <Container>
-      {matches.data.map(({ tournament, matchesDone, matchesToPlay }) => (
-        <Accordion key={tournament.id}>
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls="unfinished-games-content"
-            id="unfinished-games-header"
-          >
-            <Typography>
-              {tournament.name} ({matchesToPlay.length} unfinished)
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails className={classes.expansionBody}>
-            <TournamentMatchView
-              matchesDone={matchesDone}
-              matchesToPlay={matchesToPlay}
-              onUpdate={refetchMatches}
-            />
-          </AccordionDetails>
-        </Accordion>
-      ))}
+      {matches.data.map(
+        ({ tournament, matchesDone, matchesToPlay, bracketMatchesToPlay }) => (
+          <Accordion key={tournament.id} defaultExpanded>
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              aria-controls="unfinished-games-content"
+              id="unfinished-games-header"
+            >
+              <Typography>
+                {tournament.name}
+                {tournament.statusId === 'bracket'
+                  ? ` — bracket stage (${bracketMatchesToPlay} to report)`
+                  : ` (${matchesToPlay.length} unfinished)`}
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails className={classes.expansionBody}>
+              {tournament.statusId === 'bracket' ? (
+                <Typography>
+                  {bracketMatchesToPlay > 0
+                    ? `You have ${bracketMatchesToPlay} bracket match(es) waiting. `
+                    : 'No bracket matches waiting on you right now. '}
+                  <Link component={RouterLink} to={`/tournament/${tournament.id}`}>
+                    Open the bracket
+                  </Link>
+                </Typography>
+              ) : (
+                <TournamentMatchView
+                  matchesDone={matchesDone}
+                  matchesToPlay={matchesToPlay}
+                  onUpdate={refetchMatches}
+                />
+              )}
+            </AccordionDetails>
+          </Accordion>
+        )
+      )}
     </Container>
   )
 }

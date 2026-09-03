@@ -3,6 +3,7 @@ import { Typography } from '@material-ui/core'
 import { FC, useMemo, useState } from 'react'
 
 import { api } from '../../api'
+import { useConfirm, useNotify } from '../ConfirmProvider'
 import { useHeroLookup } from '../../hooks/useReferenceData'
 import { classColor } from '../../utils/heroUtils'
 
@@ -27,30 +28,47 @@ const MatchCard: FC<{
 }> = ({ match, participants, canReport, isAdmin, onReported }) => {
   const [busy, setBusy] = useState(false)
   const lookup = useHeroLookup()
+  const confirm = useConfirm()
+  const notify = useNotify()
   const bothPresent = match.participantAId != null && match.participantBId != null
   const reportable = canReport(match) && bothPresent
 
   const report = async (winnerId: number) => {
-    if (!window.confirm(`Set ${nameOf(participants, winnerId, null)} as the winner?`)) return
+    if (
+      !(await confirm({
+        title: 'Report match',
+        body: `Set ${nameOf(participants, winnerId, null)} as the winner?`,
+        confirmLabel: 'Set winner',
+      }))
+    )
+      return
     setBusy(true)
     try {
       await api.BracketMatch.report({ matchId: match.id, body: { winnerId } })
       onReported()
     } catch {
-      window.alert('Could not report this match')
+      await notify({ title: 'Error', body: 'Could not report this match.' })
     } finally {
       setBusy(false)
     }
   }
 
   const clear = async () => {
-    if (!window.confirm('Clear this result? Anything downstream of it is reset too.')) return
+    if (
+      !(await confirm({
+        title: 'Clear result',
+        body: 'Clear this result? Anything downstream of it is reset too.',
+        confirmLabel: 'Clear',
+        destructive: true,
+      }))
+    )
+      return
     setBusy(true)
     try {
       await api.BracketMatch.clear({ matchId: match.id })
       onReported()
     } catch {
-      window.alert('Could not clear this match')
+      await notify({ title: 'Error', body: 'Could not clear this match.' })
     } finally {
       setBusy(false)
     }

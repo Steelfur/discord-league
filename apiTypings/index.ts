@@ -177,6 +177,7 @@ export interface User$findMatches {
     tournament: Tournament
     matchesDone: ExtendedMatch[]
     matchesToPlay: ExtendedMatch[]
+    bracketMatchesToPlay: number
   }>
 }
 

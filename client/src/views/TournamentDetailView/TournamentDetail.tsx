@@ -13,6 +13,7 @@ import {
 
 import { api } from '../../api'
 import { UserContext } from '../../App'
+import { useConfirm, useNotify } from '../../components/ConfirmProvider'
 import { BracketDisplay } from '../../components/BracketDisplay/BracketDisplay'
 import { TournamentAdminPanel } from '../../components/TournamentAdminPanel'
 import { TournamentCupClassification } from '../../components/TournamentCupClassification'
@@ -33,48 +34,56 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 )
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function showApiError(err: any) {
+function errorText(err: unknown): string {
   // eslint-disable-next-line no-console
-  console.error('[FaB League] request failed:', err, {
-    status: typeof err?.status === 'function' ? err.status() : undefined,
-    data: typeof err?.data === 'function' ? err.data() : undefined,
-  })
-  const status = typeof err?.status === 'function' ? err.status() : undefined
+  console.error('[FaB League] request failed:', err)
+  const e = err as { status?: () => number; data?: () => unknown; error?: () => unknown }
+  const status = typeof e?.status === 'function' ? e.status() : undefined
   const body =
-    (typeof err?.data === 'function' && err.data()) ||
-    (typeof err?.error === 'function' && err.error()) ||
-    ''
-  const text = typeof body === 'string' && body ? body : JSON.stringify(body)
-  window.alert(`Request failed${status ? ` (${status})` : ''}: ${text || 'no details'}`)
+    (typeof e?.data === 'function' && e.data()) || (typeof e?.error === 'function' && e.error()) || ''
+  const text = typeof body === 'string' && body ? body : ''
+  return `Request failed${status ? ` (${status})` : ''}: ${text || 'no details'}`
+}
+
+function useStageAction(
+  run: () => Promise<unknown>,
+  question: string,
+  onSuccess: () => void
+): () => void {
+  const confirm = useConfirm()
+  const notify = useNotify()
+  return useCallback(async () => {
+    if (!(await confirm({ title: 'Confirm', body: question, confirmLabel: 'Yes' }))) return
+    try {
+      await run()
+      onSuccess()
+    } catch (err) {
+      await notify({ title: 'Could not complete', body: errorText(err) })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirm, notify, onSuccess, question])
 }
 
 const useFinishGroupPhase = (tournamentId: number, onSuccess: () => void) =>
-  useCallback(() => {
-    if (
-      window.confirm(
-        'Are you sure you want to end the group phase for this tournament? This cannot be undone.'
-      )
-    ) {
-      api.Tournament.closeGroupStage({ tournamentId }).then(onSuccess).catch(showApiError)
-    }
-  }, [tournamentId, onSuccess])
+  useStageAction(
+    () => api.Tournament.closeGroupStage({ tournamentId }),
+    'End the group phase for this tournament? This cannot be undone.',
+    onSuccess
+  )
 
 const useStartBracketPhase = (tournamentId: number, onSuccess: () => void) =>
-  useCallback(() => {
-    if (
-      window.confirm('Are you sure you want to lock the decklists and start the bracket phase?')
-    ) {
-      api.Tournament.startBracketStage({ tournamentId }).then(onSuccess).catch(showApiError)
-    }
-  }, [tournamentId, onSuccess])
+  useStageAction(
+    () => api.Tournament.startBracketStage({ tournamentId }),
+    'Lock the decklists and start the bracket phase?',
+    onSuccess
+  )
 
 const useFinishBracketPhase = (tournamentId: number, onSuccess: () => void) =>
-  useCallback(() => {
-    if (window.confirm('Are you sure you want to finish this tournament? This cannot be undone.')) {
-      api.Tournament.closeBracketStage({ tournamentId }).then(onSuccess).catch(showApiError)
-    }
-  }, [tournamentId, onSuccess])
+  useStageAction(
+    () => api.Tournament.closeBracketStage({ tournamentId }),
+    'Finish this tournament? This cannot be undone.',
+    onSuccess
+  )
 
 type AvailableTab = 'pods' | 'players' | 'admin' | 'decklists' | 'brackets' | 'statistics'
 function initialTab(tournament: Tournament): AvailableTab {

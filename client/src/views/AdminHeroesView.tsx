@@ -28,6 +28,7 @@ import { Loading } from '../components/Loading'
 import { MessageSnackBar } from '../components/MessageSnackBar'
 import { isAdmin } from '../hooks/useUsers'
 import { useReferenceData } from '../hooks/useReferenceData'
+import { useConfirm } from '../components/ConfirmProvider'
 
 /** Text field that reports its value only when it changes and loses focus / Enter is pressed. */
 function EditableName(props: { value: string; disabled?: boolean; onSave: (next: string) => void }) {
@@ -56,6 +57,7 @@ function EditableName(props: { value: string; disabled?: boolean; onSave: (next:
 
 export function AdminHeroesView() {
   const currentUser = useContext(UserContext)
+  const confirm = useConfirm()
   const { heroes, classes, loading, reload } = useReferenceData()
 
   const [busy, setBusy] = useState<string | null>(null)
@@ -170,12 +172,15 @@ export function AdminHeroesView() {
                       size="small"
                       disabled={busy === `class-${c.id}`}
                       title="Delete class (and its heroes)"
-                      onClick={() => {
+                      onClick={async () => {
                         if (
                           count > 0 &&
-                          !window.confirm(
-                            `Delete "${c.name}" and its ${count} hero(es)? Heroes already used in a tournament cannot be deleted.`
-                          )
+                          !(await confirm({
+                            title: 'Delete class',
+                            body: `Delete "${c.name}" and its ${count} hero(es)? Heroes already used in a tournament cannot be deleted.`,
+                            confirmLabel: 'Delete',
+                            destructive: true,
+                          }))
                         ) {
                           return
                         }
