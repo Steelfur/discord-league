@@ -35,6 +35,11 @@ export async function handler(
     return
   }
 
+  if (await db.findRegistration(req.body.userId, pod.tournamentId)) {
+    res.status(409).send('This player is already registered for this tournament.')
+    return
+  }
+
   const newParticipant = await db.insertParticipant({
     tournamentId: pod.tournamentId,
     heroId: req.body.heroId,

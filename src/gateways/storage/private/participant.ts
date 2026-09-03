@@ -60,6 +60,13 @@ export async function fetchParticipants(tournamentId: number): Promise<Participa
     .then(({ rows }) => rows)
 }
 
+export async function findRegistration(
+  userId: string,
+  tournamentId: number
+): Promise<ParticipantRecord | undefined> {
+  return pg(TABLE).where({ userId, tournamentId }).first()
+}
+
 export async function fetchParticipantsForUser(userId: string): Promise<ParticipantRecord[]> {
   return pg
     .raw(

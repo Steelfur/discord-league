@@ -50,6 +50,7 @@ export {
   ParticipantWithUserData,
   deleteParticipant,
   dropParticipant,
+  findRegistration,
   fetchMultipleParticipantsWithUserData,
   fetchParticipant,
   fetchParticipants,
